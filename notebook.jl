@@ -33,6 +33,9 @@ md"""
 # Tensor network ecosystem in Julia
 """
 
+# ╔═╡ 08581625-d3ea-46ed-ad95-1dc78f92fe4e
+
+
 # ╔═╡ a481f737-c83a-4f55-b1b5-cbb33ddbc9f4
 md"""
 # Large scale tensor network and its contraction order
@@ -121,12 +124,18 @@ md"""
 ## The difference between `einsum` and Einstein's notation
 """
 
+# ╔═╡ d1a325de-7ff3-43b5-87db-1615f746c5a2
+md"TODO: Difference with einstein's notation"
+
 # ╔═╡ 3c423eb5-b64a-4256-a41c-7d675d7396c8
 # In eincode, a variable can be shared by more than 2 tensors
-code_withbatch = ein"ijb,jkb->ikb"
+code_withbatch = ein"ijb,jkb->ikb" # b appears three times
 
 # ╔═╡ 6ce21263-bf2c-41b1-ac1f-5b4b29c94465
 md"## Optimize the contraction order"
+
+# ╔═╡ 2b68f104-88ad-4f56-8201-ddd159142238
+md"TODO: Recall `tensors`"
 
 # ╔═╡ c4eac832-3629-41bf-8dc9-5b2a6d3d914b
 size_dict = OMEinsum.get_size_dict(getixsv(code_mps), tensors)
@@ -141,6 +150,9 @@ md"""
 - Space complexity is the maximum size of intermediate tensors.
 - Read-write complexity is the number of element read and write.
 """
+
+# ╔═╡ 1fba9d72-1fe0-424f-ad87-0bfeab132726
+md"TODO: Visualizaiton for a complex contraction order and a simple one"
 
 # ╔═╡ f80aa1e7-1a92-4a52-a070-d382fa36dcb3
 optcode = optimize_code(code_mps, size_dict, TreeSA())
@@ -187,10 +199,17 @@ md"""
 # Tensor network for quantum circuit simulation: Yao.jl
 """
 
+# ╔═╡ c77ecaef-8ca4-43a5-80a9-07696d4bbca3
+md"TODO: Typo 'A'"
+
 # ╔═╡ 33f37f98-53e9-45b4-919a-2b9b1481f4ce
 md"""
 ## Simulate A quantum circuit
 """
+
+# ╔═╡ 64ce9852-6ae2-4aae-aff4-5a60495e5c2c
+md"TODO: Explain `chain`, `put`, `H` and `control`\
+TODO: Equation for qft"
 
 # ╔═╡ f32a5030-8c21-4859-82e8-8953cf8b534f
 function qft_circuit(n::Int)
@@ -211,11 +230,14 @@ qft = qft_circuit(4);
 vizcircuit(qft)
 
 # ╔═╡ f4e57c8d-57d3-4ee1-9cfe-06bfac8ac87f
-mat(control(2, 1, 2=>shift(Basic(π)/2)))
+mat(control(2, 1, 2=>shift(Basic(π)/2))) # Basic is the symbolic type for visualization
+
+# ╔═╡ 9b84cd0f-653f-45b5-84cb-a5b287aaaaac
+md"TODO: What is `Basic(pi)`"
 
 # ╔═╡ 49dfaa9b-bcbc-4f60-8496-34561e57d098
 md"""
-## Fron gates to tensors
+## From gates to tensors
 """
 
 # ╔═╡ d96500ba-ade4-4666-a37b-222673960117
@@ -285,6 +307,9 @@ end
 # ╔═╡ cb012a72-f5d8-41b7-9146-0cb184269801
 reshape(ein"ij->ijij"([1 1; 1 exp(im*Basic(π)/2)]), 4, 4)
 
+# ╔═╡ 99d9c496-ee23-4cf2-913a-1f7fe445bbd2
+md"TODO:??"
+
 # ╔═╡ d2833db0-7f86-493b-b96e-8747f782f129
 md"## Convert a circuit to a tensor network"
 
@@ -311,6 +336,9 @@ nodestore() do ns
 		LuxorGraphPlot.text("i", dx+10, 0)
 	end
 end
+
+# ╔═╡ be501e67-fe5c-4d58-bf80-f130c49b00bd
+md"TODO: Bug fix"
 
 # ╔═╡ a991e849-b397-40c6-8036-b9aa728f4c22
 md"""
@@ -364,6 +392,9 @@ nodestore() do ns
 	end
 end
 
+# ╔═╡ bfe186c4-1a90-40cd-8920-bd7bbc195e87
+md"TODO: Bug fix (It seems different from the circuit rep.)"
+
 # ╔═╡ c82d42d1-b542-464a-86ce-b294ba1794fd
 md"""
 The output indices are left open at this moment.
@@ -383,6 +414,9 @@ reg = zero_state(4)
 # ╔═╡ 5aa12b6b-7b98-44e1-9fe5-4c34f7950aa1
 expect(observable, reg=>qft)
 
+# ╔═╡ 22760997-743d-47da-88f7-39e8ce1f0afb
+md"TODO: Why expectation? Does that mean braket"
+
 # ╔═╡ 607ba3e1-a95d-4c05-825e-37ea538df099
 extended_circuit = chain(qft, observable, qft'); vizcircuit(extended_circuit)
 
@@ -390,11 +424,20 @@ extended_circuit = chain(qft, observable, qft'); vizcircuit(extended_circuit)
 # initial state
 input_states = Dict([i=>zero_state(1) for i in 1:4])
 
+# ╔═╡ b85effee-8b15-4070-bb4c-85b90b8c1165
+md"TODO: Why `zero_state(1)`"
+
 # ╔═╡ 507e2118-ba05-4e7a-9b3b-54d4818401c7
 qft_net = yao2einsum(extended_circuit; initial_state = input_states, final_state = input_states, optimizer = TreeSA(nslices=2))
 
 # ╔═╡ 72c31b7e-1bc0-4518-9a67-be6a0593a431
 show_einsum(qft_net.code; layout=SpringLayout(optimal_distance=25))
+
+# ╔═╡ 22ec0fc3-8d9f-4bee-8941-240fede7311c
+md"TODO: Why such layout"
+
+# ╔═╡ e1815e51-859f-4ee0-a458-62fc44997444
+md"TODO: Better illustration for input indices"
 
 # ╔═╡ cd81e14e-7f1c-416b-8dd2-3ab1546995aa
 contraction_complexity(qft_net)
@@ -427,11 +470,20 @@ TODO: from independent set problem to energy based model and partition function 
 # ╔═╡ 8ebfc7a9-973e-421b-88fe-0adc3fbd076f
 problem = IndependentSet(graph)  # Independent set problem
 
+# ╔═╡ 7c60260d-38a5-4971-bfbc-0d477a17f9b2
+md"`IndependentSet` from which package"
+
 # ╔═╡ f01b2afd-89bf-4775-a80b-1e336c7fcc60
 generic_tn = GenericTensorNetwork(problem)  # Convert to tensor network
 
+# ╔═╡ 2dce758e-6a5c-48a6-8d3d-8e9513489dc1
+md"TODO: What happened in this conversion"
+
 # ╔═╡ 6d14bc3f-026a-4e6a-9734-cb987a528af3
 fieldnames(generic_tn |> typeof)
+
+# ╔═╡ c8f652e3-6687-4094-a101-4e6d7522c779
+md"TODO:`fieldnames`"
 
 # ╔═╡ 7110cb89-3395-44c3-aa42-e255e03d4cd2
 show_einsum(generic_tn.code)
@@ -442,8 +494,14 @@ res_size = solve(generic_tn, SizeMax())[]  # MIS size
 # ╔═╡ a57f47ca-d280-4edf-8829-8ff36e906624
 res_count = solve(generic_tn, CountingMax(2))[]  # Counting of independent sets with largest 2 sizes
 
+# ╔═╡ c7b3b351-b373-41f8-b091-d392b1d97f55
+md"TODO: `SizeMax`,`CountingMax`"
+
 # ╔═╡ 103bfdb6-7d4b-4a5f-963e-df8df3f94c6b
 configs_raw = solve(generic_tn, ConfigsMax(2; tree_storage=true))[]  # The corresponding configurations
+
+# ╔═╡ c8b57c73-c11b-4c97-9a1f-b8a9ca876ce3
+md"TODO: Explaination for parameters `ConfigsMax` and `tree_storage`"
 
 # ╔═╡ 796f0ab7-c0c6-41e1-b83c-331a2be6c302
 configs = read_config(configs_raw)
@@ -453,6 +511,9 @@ show_configs(problem, StressLayout(optimal_distance=20), fill(configs[2][1], 1, 
 
 # ╔═╡ 47378ab1-5883-4ec8-ad60-2d54720c0f4c
 show_landscape((x, y)->hamming_distance(x, y) <= 2, configs_raw; layout_method=:spring)
+
+# ╔═╡ d3e1695b-7a29-46bb-aa1d-0e7700cc48fa
+md"TODO: Landscape of all solutions?"
 
 # ╔═╡ d9d22920-601f-4135-b529-bcc01caae23a
 md"# Tensor network for probabilistic inference: TensorInference.jl"
@@ -517,6 +578,9 @@ Import the TensorInference package, which provides the functionality needed
 for working with tensor networks and probabilistic graphical models.
 """
 
+# ╔═╡ c5941856-c4b6-4767-8f4f-044c4c9c45cd
+md"TODO: Arrows stand for what"
+
 # ╔═╡ d2d7984e-9298-42ac-92b2-99b612c6ec7e
 md"""
 Load the ASIA network model from the `asia.uai` file located in the examples
@@ -544,6 +608,9 @@ probability(inference_tn) |> first
 # ---
 
 # Calculate the marginal probabilities of each random variable in the model.
+
+# ╔═╡ 4401cc22-b7f2-4a9a-8bd5-0de3c493f011
+md"TODO: Comment to explain pipe operator"
 
 # ╔═╡ 90e23bda-0665-4252-9675-81af96dfa04b
 marginals(inference_tn)
@@ -618,6 +685,7 @@ md"""
 # ╔═╡ Cell order:
 # ╟─ca6bee1f-d3d3-4620-aba9-363e5b856c69
 # ╟─e9fbbd5d-6cea-4e1c-807b-6dc3939d3628
+# ╠═08581625-d3ea-46ed-ad95-1dc78f92fe4e
 # ╟─92f32d6f-de53-4794-8451-5a3ca62ef828
 # ╟─a481f737-c83a-4f55-b1b5-cbb33ddbc9f4
 # ╟─c12e790f-769c-4277-b41d-81d08c0e134c
@@ -640,11 +708,14 @@ md"""
 # ╠═ca5d4d5b-dfe3-4fd8-a5b2-6cbe70ef84a4
 # ╠═6884f655-aac8-4f22-8de7-e2624f1e9246
 # ╟─4d412abe-17b3-46bf-99fe-b133b20610ee
+# ╟─d1a325de-7ff3-43b5-87db-1615f746c5a2
 # ╠═3c423eb5-b64a-4256-a41c-7d675d7396c8
 # ╟─6ce21263-bf2c-41b1-ac1f-5b4b29c94465
+# ╟─2b68f104-88ad-4f56-8201-ddd159142238
 # ╠═c4eac832-3629-41bf-8dc9-5b2a6d3d914b
 # ╠═3c84890c-0371-44cb-a9c7-ae76adeb0307
 # ╟─98cafa86-1fa5-43b9-b479-3f0893fecbb8
+# ╟─1fba9d72-1fe0-424f-ad87-0bfeab132726
 # ╠═f80aa1e7-1a92-4a52-a070-d382fa36dcb3
 # ╟─b4d09576-c8b3-4363-bd45-1364e4918862
 # ╠═750ab594-9990-4ad1-a8c8-e66ea058909d
@@ -655,12 +726,15 @@ md"""
 # ╟─3fc75abf-5f97-4534-87aa-7c5944e58d64
 # ╟─90f342ba-0a56-4702-afd5-6a8c49964b19
 # ╟─25f8e2f2-022e-4c65-aff3-4af8fe43a5dc
+# ╟─c77ecaef-8ca4-43a5-80a9-07696d4bbca3
 # ╟─33f37f98-53e9-45b4-919a-2b9b1481f4ce
 # ╠═c3cc1bd0-68e6-430c-b306-696c51165b9c
+# ╠═64ce9852-6ae2-4aae-aff4-5a60495e5c2c
 # ╠═f32a5030-8c21-4859-82e8-8953cf8b534f
 # ╠═7b87b462-4c32-40f7-ae8f-f68df3d42e45
 # ╠═10242d23-2a97-43d5-874f-db283dfbd274
 # ╠═f4e57c8d-57d3-4ee1-9cfe-06bfac8ac87f
+# ╟─9b84cd0f-653f-45b5-84cb-a5b287aaaaac
 # ╟─49dfaa9b-bcbc-4f60-8496-34561e57d098
 # ╟─d96500ba-ade4-4666-a37b-222673960117
 # ╟─5956ee36-d0b8-4231-a5ae-b18d5c02842e
@@ -672,21 +746,28 @@ md"""
 # ╟─b7735171-7345-49da-916e-b8c9942eec84
 # ╟─6173ea8a-a9e7-40e8-badb-601f8e96bd7d
 # ╠═cb012a72-f5d8-41b7-9146-0cb184269801
+# ╟─99d9c496-ee23-4cf2-913a-1f7fe445bbd2
 # ╟─d2833db0-7f86-493b-b96e-8747f782f129
 # ╟─29a41d88-7531-4914-866f-bc4185bde8c2
 # ╟─ae35e03a-0da9-496f-b942-ff312fb2b366
-# ╟─faafeff1-c964-440c-a2e8-640fd323f5ae
+# ╠═faafeff1-c964-440c-a2e8-640fd323f5ae
+# ╟─be501e67-fe5c-4d58-bf80-f130c49b00bd
 # ╟─a991e849-b397-40c6-8036-b9aa728f4c22
 # ╟─e229dd53-bf34-4048-8464-61cc35225225
+# ╟─bfe186c4-1a90-40cd-8920-bd7bbc195e87
 # ╟─c82d42d1-b542-464a-86ce-b294ba1794fd
 # ╟─3190b0a1-3c67-412f-8002-f3d9c8cf64a3
 # ╠═1131347f-389a-4941-ad87-07480a8f97c5
 # ╠═51c319c4-d729-4774-80b3-b00b5945fced
 # ╠═5aa12b6b-7b98-44e1-9fe5-4c34f7950aa1
+# ╟─22760997-743d-47da-88f7-39e8ce1f0afb
 # ╠═607ba3e1-a95d-4c05-825e-37ea538df099
 # ╠═ccffa22f-b5e1-4c36-b93b-cba41bbbca41
+# ╟─b85effee-8b15-4070-bb4c-85b90b8c1165
 # ╠═507e2118-ba05-4e7a-9b3b-54d4818401c7
 # ╠═72c31b7e-1bc0-4518-9a67-be6a0593a431
+# ╟─22ec0fc3-8d9f-4bee-8941-240fede7311c
+# ╟─e1815e51-859f-4ee0-a458-62fc44997444
 # ╠═cd81e14e-7f1c-416b-8dd2-3ab1546995aa
 # ╠═bdef27a3-0c0f-4349-a134-0020e0e1efd0
 # ╟─5e11bfc0-d1c9-4a86-9eef-9c20488c8f93
@@ -698,24 +779,32 @@ md"""
 # ╟─d2ef3090-4786-4391-8b8a-c7d9a7f1b511
 # ╟─1d579198-b6e2-4b60-8759-85d3fc6ee244
 # ╠═8ebfc7a9-973e-421b-88fe-0adc3fbd076f
+# ╟─7c60260d-38a5-4971-bfbc-0d477a17f9b2
 # ╠═f01b2afd-89bf-4775-a80b-1e336c7fcc60
+# ╟─2dce758e-6a5c-48a6-8d3d-8e9513489dc1
 # ╠═6d14bc3f-026a-4e6a-9734-cb987a528af3
+# ╟─c8f652e3-6687-4094-a101-4e6d7522c779
 # ╠═7110cb89-3395-44c3-aa42-e255e03d4cd2
 # ╠═334dd61b-787a-4a2c-b507-448791df917a
 # ╠═a57f47ca-d280-4edf-8829-8ff36e906624
+# ╟─c7b3b351-b373-41f8-b091-d392b1d97f55
 # ╠═103bfdb6-7d4b-4a5f-963e-df8df3f94c6b
+# ╟─c8b57c73-c11b-4c97-9a1f-b8a9ca876ce3
 # ╠═796f0ab7-c0c6-41e1-b83c-331a2be6c302
 # ╠═776ffe52-bbe2-4ad2-b3e8-8644d34e0b50
 # ╠═47378ab1-5883-4ec8-ad60-2d54720c0f4c
+# ╟─d3e1695b-7a29-46bb-aa1d-0e7700cc48fa
 # ╟─d9d22920-601f-4135-b529-bcc01caae23a
 # ╟─a73e8709-95ab-4d9c-9312-a0731d598f18
 # ╟─102aabd3-048c-4701-a384-27b525e80f9c
+# ╟─c5941856-c4b6-4767-8f4f-044c4c9c45cd
 # ╠═1845d970-4f90-4714-bc74-6e38b27160f4
 # ╟─d2d7984e-9298-42ac-92b2-99b612c6ec7e
 # ╠═c3181124-4c6a-478e-9886-02e085251ec3
 # ╟─3bbb23af-4303-45e9-b1bc-76450524d103
 # ╠═b96a17ae-c2b8-428b-a965-ecd09bd2fee1
 # ╠═325f8bb8-6097-49fb-99e7-a1cb34f27116
+# ╟─4401cc22-b7f2-4a9a-8bd5-0de3c493f011
 # ╠═90e23bda-0665-4252-9675-81af96dfa04b
 # ╠═00b47a54-cae5-4a41-9d1a-cad8e4264c3f
 # ╟─f419f822-088f-40fa-b1c5-93d0bdaa0137
