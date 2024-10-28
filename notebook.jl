@@ -11,7 +11,7 @@ using InteractiveUtils
 using Pkg; Pkg.activate(".")
 
 # ╔═╡ 92f32d6f-de53-4794-8451-5a3ca62ef828
-using PlutoUI; PlutoUI.TableOfContents()
+using PlutoUI, LuxorGraphPlot; PlutoUI.TableOfContents()
 
 # ╔═╡ b9970d7f-9a69-424e-89c0-bbfcfe5f12d7
 using OMEinsum
@@ -21,9 +21,6 @@ using Yao
 
 # ╔═╡ 332085f3-ef12-4a7d-9714-e8f4a88d5a28
 using GenericTensorNetworks
-
-# ╔═╡ 5c3dfeeb-3dd2-4a4d-a1b7-2d292beccf73
-using LuxorGraphPlot
 
 # ╔═╡ 1845d970-4f90-4714-bc74-6e38b27160f4
 using TensorInference
@@ -40,9 +37,9 @@ md"""
 
 # ╔═╡ c12e790f-769c-4277-b41d-81d08c0e134c
 md"""
-## OMEinsum.jl
+## OMEinsum.jl: a package for large scale tensor contraction
 
-A tensor network contraction engine featuring:
+`OMEinsum` is a google summer of code (GSoC) project at 2019 (Andreas Peter and Jin-Guo Liu). It features:
 - Hyper-optimized contraction order
 - Automatic differentiation and GPU support
 
@@ -54,10 +51,13 @@ md"""
 """
 
 # ╔═╡ 1f6d1be8-5157-4115-b5d6-e4ad6d474dd5
-md"A contraction order, or an *einsum code*, is specified as an `EinCode` object started with `ein`"
+md"A contraction order, or an *einsum code*, is specified with a string literal started with `ein`"
 
 # ╔═╡ 0a83fd07-6dd3-4228-b435-c7f0c1ddbc12
-code = ein"ij,jk->ik"
+code = ein"ij,jk->ik"  # returns an EinCode object
+
+# ╔═╡ aa4b0f28-7553-4e3c-b35f-6c069aae7de9
+typeof(code)
 
 # ╔═╡ 1cf11208-acb2-4bbb-8342-140775c4a7c0
 md"`getixsv` and `getiyv` to obtain input/output indices:"
@@ -79,7 +79,7 @@ R = code(A, B)
 
 # ╔═╡ c4e8f71a-3118-4455-a9a5-b427e2d19ba0
 md"""
-which means
+The pseudocode reads
 ```julia
 for i = 1:n_i
     for j = 1:n_j
@@ -219,10 +219,10 @@ md"TODO: Bug fix"
 
 # ╔═╡ 2656103c-fe7f-4a76-9f89-57aadc892824
 # ╠═╡ show_logs = false
-videofile = viz_contraction(optcode);
+videofile = viz_contraction(optcode; framerate=2);
 
 # ╔═╡ 05171dfb-a005-448d-856a-4f1d417451b0
-LocalResource(videofile)
+LocalResource(videofile, :width=>400)
 
 # ╔═╡ 750ab594-9990-4ad1-a8c8-e66ea058909d
 contraction_complexity(optcode, size_dict_inner)
@@ -262,7 +262,7 @@ And also Xuan-Zhao Gao's talk tomorrow.
 """
 
 # ╔═╡ decce1ca-cd63-494c-8db5-c46990fdb740
-md"## Slicing technique"
+md"## Further improve the memory efficiency: the slicing technique"
 
 # ╔═╡ 754640f1-5621-460d-87de-8c90665db8c4
 md"""
@@ -309,7 +309,7 @@ end
 
 # ╔═╡ 25f8e2f2-022e-4c65-aff3-4af8fe43a5dc
 md"""
-# Tensor network for quantum circuit simulation: Yao.jl
+# Yao.jl: Tensor network for quantum circuit simulation
 """
 
 # ╔═╡ e49d57c4-d215-4409-b7ad-f7206b2aec89
@@ -442,9 +442,9 @@ end
 mat(control(2, 1, 2=>shift(Basic(:π)/2)))
 
 # ╔═╡ cb012a72-f5d8-41b7-9146-0cb184269801
-reshape(ein"ij->ijij"([1 1; 1 exp(im * pi / 2)]), 4, 4)
-#reshape(ein"ij->ijij"([1 1; 1 exp(im*Basic(:π)/2)]), 4, 4)
-#ein"ij->ijij"([1 1; 1 exp(im*π/2)])
+# reshape(ein"ij->ijij"([1 1; 1 exp(im * pi / 2)]), 4, 4)
+reshape(ein"ij->ijij"([1 1; 1 exp(im*Basic(:π)/2)]), 4, 4)
+# ein"ij->ijij"([1 1; 1 exp(im*π/2)])
 
 # ╔═╡ 8f7d7e0f-1fe1-4ac6-b0a3-4225368a8518
 md"TODO: Replaced `exp(im*Basic(:π)/2)` (which was not functioning) with `exp(im * pi / 2)`. Plz verify if this aligns with the intended expression."
@@ -505,7 +505,7 @@ nodestore() do ns
 		push!(cons, Connection(inputs[i], hs[i]))
 		for j = i+1:n
 			x0 += dx
-			push!(cs, circle!((x0, y0+(j + i)/2 * dy), r))
+			push!(cs, circle!((x0, y0+((j + i)%2 == 0 ? (j+i+1)/2 : (j + i)/2) * dy), r))
 			push!(dots, circle!((x0, y0+j*dy), sr))
 			push!(dots, circle!((x0, y0+i*dy), sr))
 			push!(cons, Connection(dots[end], cs[end]))
@@ -527,9 +527,6 @@ nodestore() do ns
 		stroke.(cons)
 	end
 end
-
-# ╔═╡ 068b408b-c67b-444e-8610-8d65b778301e
-md"TODO: $\frac{\pi}{4}$ obscured"
 
 # ╔═╡ c82d42d1-b542-464a-86ce-b294ba1794fd
 md"""
@@ -595,15 +592,7 @@ contraction_complexity(qft_net)
 contract(qft_net) # Alternative way to calculate <reg|qft' observable qft|reg>
 
 # ╔═╡ 5e11bfc0-d1c9-4a86-9eef-9c20488c8f93
-md"# Combinatorial optimization"
-
-# ╔═╡ 948f5a2a-0feb-4e00-a3ad-d9c1b2f4771d
-md"TODO: Consider replacing ‘Combinatorial Optimization’ with ‘Tensor Network for Solving Combinatorial …’ to align with the titles of other sections"
-
-# ╔═╡ ef3c35e8-c7ec-4a18-894c-7e511b598aa4
-md"""
-## Tensor network for solving combinatorial optimization problems: GenericTensorNetworks.jl
-"""
+md"# GenericTensorNetworks.jl: Tensor networks for combinatorial optimization"
 
 # ╔═╡ 53d3630c-c660-4c9a-9a1b-443613c17f6d
 md"`GenericTensorNetworks.jl` implements generic tensor networks to compute solution space properties of a class of hard combinatorial problems"
@@ -611,17 +600,8 @@ md"`GenericTensorNetworks.jl` implements generic tensor networks to compute solu
 # ╔═╡ 889a4baf-842c-4429-b472-394eb35d8600
 graph = random_diagonal_coupled_graph(7, 6, 0.8) # Create a mxn random masked diagonal coupled square lattice graph, with number of vertices equal to ⌊m×n×ρ⌉
 
-# ╔═╡ f4b5b37f-7929-41b5-9ca7-61166760e1bb
-md"TODO: Whether to introduce `LuxorGraphPlot`"
-
-# ╔═╡ 2fca90fd-16b4-4621-85c7-96b1ba7f82b8
-show_graph(graph, StressLayout(optimal_distance=20))
-
 # ╔═╡ d2ef3090-4786-4391-8b8a-c7d9a7f1b511
 md"## Independent set problem"
-
-# ╔═╡ 456ea74b-da18-4410-a886-fbba94498dab
-md"TODO: Mix-up between problems like independent sets, maximum independent sets, maximum independent set size, etc. Need to clarify these concepts and their relationship to partition functions."
 
 # ╔═╡ c0022c3e-a56c-4363-8d6e-e70f0178a754
 LocalResource("idp.png", :width=>200)
@@ -634,7 +614,14 @@ An *independent set* is a set of vertices in a graph where no two vertices are a
 """
 
 # ╔═╡ d9a7c4da-f633-4662-91af-ae97f525c248
-md"The *independent set problem* is to find all independent sets given a graph $G$ and the *MIS problem* is to find all MIS or to calculate the size of MIS"
+md"""
+## The maximum independent set (MIS) problem is in NP complete
+- The *MIS problem* is to find all MIS or to calculate the size of MIS.
+- It is in NP-complete - unlikely to solve in polynomial time.
+"""
+
+# ╔═╡ 2fca90fd-16b4-4621-85c7-96b1ba7f82b8
+show_graph(graph, StressLayout(optimal_distance=20))
 
 # ╔═╡ 8ebfc7a9-973e-421b-88fe-0adc3fbd076f
 problem = GenericTensorNetworks.IndependentSet(graph)  # Independent set problem
@@ -664,13 +651,10 @@ md"""
 
 # ╔═╡ ef57dd09-b249-4f03-bf19-0947ba8e173a
 md"""
-Partition function:
+*Partition function*:
 
 $$Z = \sum_{\mathbf{n} \in \{0, 1\}^{|V|}} e^{-\beta H(\mathbf{n})}.$$
 """
-
-# ╔═╡ d1814364-73bd-422c-bc49-2f7856247038
-md"TODO: check the second line of equations below"
 
 # ╔═╡ 0144e548-4517-48f4-ad8d-1b06ac12df1c
 md"""
@@ -682,9 +666,6 @@ Z &= \sum_{\mathbf{n} \in \{0, 1\}^{|V|}} \exp\left(\beta \sum_{v \in V} n_v - \
 \end{align*}$$
 """
 
-# ╔═╡ 3edc1c09-671e-4076-aeaf-a4c85c4cdba3
-md"Convert an indepent set problem to a tensor network, with contraction order optimized selectively"
-
 # ╔═╡ f01b2afd-89bf-4775-a80b-1e336c7fcc60
 generic_tn = GenericTensorNetwork(problem, optimizer=TreeSA())
 
@@ -692,21 +673,54 @@ generic_tn = GenericTensorNetwork(problem, optimizer=TreeSA())
 # `fieldnames` lists the members of an object
 fieldnames(generic_tn |> typeof)
 
+# ╔═╡ 3edc1c09-671e-4076-aeaf-a4c85c4cdba3
+md"Convert an indepent set problem to a tensor network, with contraction order optimized"
+
 # ╔═╡ 7110cb89-3395-44c3-aa42-e255e03d4cd2
 show_einsum(generic_tn.code, layout=StressLayout(optimal_distance=20))
 
-# ╔═╡ a3d003f7-b76e-4499-b350-962dfc2b68ce
-md"`solve` provides solutions under certain constraints"
+# ╔═╡ a9fe85ec-770f-4680-af55-f84495837ea3
+# PartitionFunction(beta): The partition function
+Z = solve(generic_tn, PartitionFunction(3.0))[]
+
+# ╔═╡ 487eef09-197a-4381-aeed-1e7c5c9c785d
+md"""
+## The partition function can be represented as a polynomial
+"""
+
+# ╔═╡ feff13a6-bc70-419b-ba52-7dc2cd0728ad
+md"""
+By letting $x = e^\beta$, we obtain the *independence polynomial*:
+```math
+I(x) = a_0 + a_1 x + \ldots + a_{\alpha(G)} x^{\alpha(G)}
+```
+"""
+
+# ╔═╡ 9e9a7534-a2ef-451b-a935-2b0b4db4912f
+solve(generic_tn, GraphPolynomial())
+
+# ╔═╡ 5aa727d6-884e-47ec-9939-37a0926fbb81
+md"""
+## The optimal solution size: MIS size
+"""
+
+# ╔═╡ f180a681-8c05-4a05-aac9-0c9f26c3d0b7
+md"""
+$\lim_{x\rightarrow \infty}\frac{\log(I(x))}{\log(x)} = \alpha(G)$
+"""
 
 # ╔═╡ 334dd61b-787a-4a2c-b507-448791df917a
 # SizeMax(): The maximum solution size
 res_size = solve(generic_tn, SizeMax())[]  # MIS size
 
-# ╔═╡ 66a104cf-44d8-4a97-af89-82fe10a65510
-md"TODO: Clarity relation between `x` and $\beta$ in the partition function"
+# ╔═╡ 4beeff1a-2a15-485f-82dd-0691e9dcbd14
+md"""
+## Visualize the solutions
+"""
 
 # ╔═╡ a57f47ca-d280-4edf-8829-8ff36e906624
 # CountingMax(2): Count solutions with largest 2 sizes
+# in the output, x = e^β
 res_count = solve(generic_tn, CountingMax(2))[]
 
 # ╔═╡ 103bfdb6-7d4b-4a5f-963e-df8df3f94c6b
@@ -725,11 +739,10 @@ show_configs(problem, StressLayout(optimal_distance=20), fill(configs[2][1], 1, 
 show_landscape((x, y)->hamming_distance(x, y) <= 2, configs_raw; layout_method=:stress)
 
 # ╔═╡ d9d22920-601f-4135-b529-bcc01caae23a
-md"# Tensor network for probabilistic inference: TensorInference.jl"
+md"# TensorInference.jl: Tensor network for probabilistic inference"
 
 # ╔═╡ a73e8709-95ab-4d9c-9312-a0731d598f18
 md"""
-## Package features
 Solutions to the most common probabilistic inference tasks, including:
 - *Probability of evidence* (PR): Calculates the total probability of the observed evidence across all possible states of the unobserved variables
 - *Marginal inference* (MAR): Computes the probability distribution of a subset of variables, ignoring the states of all other variables
@@ -742,8 +755,7 @@ md"""
 ## The ASIA network
 
 The graph below corresponds to the *ASIA network*, a simple Bayesian model
-used extensively in educational settings. It was introduced by Lauritzen in
-1988 [^lauritzen1988local].
+used extensively in educational settings. It was introduced by Lauritzen in 1988.
 
 ```
 ┌───┐           ┌───┐
@@ -778,16 +790,11 @@ ASIA network model.
 |        ``E``         | Patient hast ``T`` and/or ``L`` |
 |        ``X``         | Chest X-Ray is positive         |
 |        ``D``         | Patient has dyspnoea            |
+"""
 
----
-
-We now demonstrate how to use the `TensorInference.jl` package for conducting a
-variety of inference tasks on the Asia network.
-
----
-
-Import the `TensorInference` package, which provides the functionality needed
-for working with tensor networks and probabilistic graphical models.
+# ╔═╡ b0bc1b88-ccd9-4dd8-a9fe-7969ee698aeb
+md"""
+## Load a model from a file
 """
 
 # ╔═╡ d2d7984e-9298-42ac-92b2-99b612c6ec7e
@@ -800,9 +807,18 @@ format of this file.
 # ╔═╡ c3181124-4c6a-478e-9886-02e085251ec3
 model = read_model_file(pkgdir(TensorInference, "examples", "asia-network", "model.uai"))
 
+# ╔═╡ d4dfc2d6-b967-4a6b-a64b-dba24b3318bc
+md"""
+## Compute marginal probabilities
+"""
+
 # ╔═╡ b96a17ae-c2b8-428b-a965-ecd09bd2fee1
 # Create a tensor network representation of the loaded model.
 inference_tn = TensorNetworkModel(model)
+
+# ╔═╡ 00b47a54-cae5-4a41-9d1a-cad8e4264c3f
+# Retrieve all the variables in the model.
+get_vars(inference_tn)
 
 # ╔═╡ 325f8bb8-6097-49fb-99e7-a1cb34f27116
 # Calculate the partition function
@@ -812,9 +828,10 @@ probability(inference_tn) |> first
 # Calculate the marginal probabilities of each random variable in the model.
 marginals(inference_tn)
 
-# ╔═╡ 00b47a54-cae5-4a41-9d1a-cad8e4264c3f
-# Retrieve all the variables in the model.
-get_vars(inference_tn)
+# ╔═╡ 8d3b719e-699b-40f8-be10-845519263475
+md"""
+## Compute maximum likely assignment to variables from an evidence
+"""
 
 # ╔═╡ f419f822-088f-40fa-b1c5-93d0bdaa0137
 md"""
@@ -833,6 +850,11 @@ Calculate the maximum log-probability among all configurations.
 
 # ╔═╡ 5ad55ef1-52ea-4de9-943b-57c5aed16fad
 maximum_logp(inference_tn2)
+
+# ╔═╡ e98b27e1-14a5-4f94-97ad-ea25350bee86
+md"""
+## Sample from probability distribution
+"""
 
 # ╔═╡ 86a1f5d6-3bb5-42f2-845f-4b615356b888
 md"Generate 10 samples from the posterior distribution."
@@ -871,11 +893,6 @@ that the probability is roughly half.
 # ╔═╡ 40d35ecd-8c2c-49be-b150-6ac7639fdee7
 log_probability(mmap, [1, 0]), log_probability(mmap, [0, 0])
 
-# ╔═╡ 6541b03c-53af-4697-8092-74f4f29106ea
-md"""
-[^lauritzen1988local]: Steffen L Lauritzen and David J Spiegelhalter. Local computations with probabilities on graphical structures and their application to expert systems. *Journal of the Royal Statistical Society: Series B (Methodological)*, 50(2):157–194, 1988.
-"""
-
 # ╔═╡ Cell order:
 # ╟─ca6bee1f-d3d3-4620-aba9-363e5b856c69
 # ╟─e9fbbd5d-6cea-4e1c-807b-6dc3939d3628
@@ -886,13 +903,14 @@ md"""
 # ╟─ec23abba-eaf0-4e7a-bf7e-b50ffbe9532f
 # ╟─1f6d1be8-5157-4115-b5d6-e4ad6d474dd5
 # ╠═0a83fd07-6dd3-4228-b435-c7f0c1ddbc12
-# ╠═1cf11208-acb2-4bbb-8342-140775c4a7c0
+# ╠═aa4b0f28-7553-4e3c-b35f-6c069aae7de9
+# ╟─1cf11208-acb2-4bbb-8342-140775c4a7c0
 # ╠═e82c8140-c80e-4683-a72a-c8dec034c0a9
 # ╠═8f153a7f-3977-44ce-8c9c-7540f6c84e2c
 # ╟─9a66d58a-7958-4cf9-ba68-688323b74feb
 # ╠═4e849834-1f00-4283-ad7c-f7a783d77ab4
 # ╠═0ddf1061-d53c-4561-943b-f4460ee58962
-# ╠═c4e8f71a-3118-4455-a9a5-b427e2d19ba0
+# ╟─c4e8f71a-3118-4455-a9a5-b427e2d19ba0
 # ╟─6af3c70e-5a7e-4ab8-baf1-d666fea321cb
 # ╠═3b9821b6-851d-4509-aa7c-7ac7c8d57399
 # ╠═56cfb6d5-1866-4318-a578-7b30660b1f45
@@ -939,7 +957,7 @@ md"""
 # ╟─90f342ba-0a56-4702-afd5-6a8c49964b19
 # ╟─decce1ca-cd63-494c-8db5-c46990fdb740
 # ╟─754640f1-5621-460d-87de-8c90665db8c4
-# ╠═095d5fa0-6f85-4f4e-9ec0-18768f6839fb
+# ╟─095d5fa0-6f85-4f4e-9ec0-18768f6839fb
 # ╟─25f8e2f2-022e-4c65-aff3-4af8fe43a5dc
 # ╟─e49d57c4-d215-4409-b7ad-f7206b2aec89
 # ╠═c3cc1bd0-68e6-430c-b306-696c51165b9c
@@ -968,7 +986,6 @@ md"""
 # ╟─faafeff1-c964-440c-a2e8-640fd323f5ae
 # ╟─a991e849-b397-40c6-8036-b9aa728f4c22
 # ╟─e229dd53-bf34-4048-8464-61cc35225225
-# ╟─068b408b-c67b-444e-8610-8d65b778301e
 # ╟─c82d42d1-b542-464a-86ce-b294ba1794fd
 # ╟─3190b0a1-3c67-412f-8002-f3d9c8cf64a3
 # ╟─6e7dafd6-9998-4d5a-8bc1-d99e8d1f4e47
@@ -986,33 +1003,32 @@ md"""
 # ╠═cd81e14e-7f1c-416b-8dd2-3ab1546995aa
 # ╠═bdef27a3-0c0f-4349-a134-0020e0e1efd0
 # ╟─5e11bfc0-d1c9-4a86-9eef-9c20488c8f93
-# ╟─948f5a2a-0feb-4e00-a3ad-d9c1b2f4771d
-# ╟─ef3c35e8-c7ec-4a18-894c-7e511b598aa4
 # ╟─53d3630c-c660-4c9a-9a1b-443613c17f6d
 # ╠═332085f3-ef12-4a7d-9714-e8f4a88d5a28
 # ╠═889a4baf-842c-4429-b472-394eb35d8600
-# ╟─f4b5b37f-7929-41b5-9ca7-61166760e1bb
-# ╠═5c3dfeeb-3dd2-4a4d-a1b7-2d292beccf73
-# ╠═2fca90fd-16b4-4621-85c7-96b1ba7f82b8
 # ╟─d2ef3090-4786-4391-8b8a-c7d9a7f1b511
-# ╟─456ea74b-da18-4410-a886-fbba94498dab
 # ╟─c0022c3e-a56c-4363-8d6e-e70f0178a754
-# ╠═b9c74fbd-9836-46ac-b832-42731fcfc7ed
+# ╟─b9c74fbd-9836-46ac-b832-42731fcfc7ed
 # ╟─d9a7c4da-f633-4662-91af-ae97f525c248
+# ╟─2fca90fd-16b4-4621-85c7-96b1ba7f82b8
 # ╠═8ebfc7a9-973e-421b-88fe-0adc3fbd076f
 # ╟─f8d7ade9-183c-4965-851f-3b729ba4c4c7
 # ╟─37442c16-ac1a-4c2f-b54b-91abac834a22
 # ╟─81ae7d6f-ec4b-48de-a86f-613476d71122
 # ╟─ef57dd09-b249-4f03-bf19-0947ba8e173a
-# ╟─d1814364-73bd-422c-bc49-2f7856247038
 # ╟─0144e548-4517-48f4-ad8d-1b06ac12df1c
-# ╟─3edc1c09-671e-4076-aeaf-a4c85c4cdba3
 # ╠═f01b2afd-89bf-4775-a80b-1e336c7fcc60
 # ╠═6d14bc3f-026a-4e6a-9734-cb987a528af3
+# ╟─3edc1c09-671e-4076-aeaf-a4c85c4cdba3
 # ╠═7110cb89-3395-44c3-aa42-e255e03d4cd2
-# ╟─a3d003f7-b76e-4499-b350-962dfc2b68ce
+# ╠═a9fe85ec-770f-4680-af55-f84495837ea3
+# ╟─487eef09-197a-4381-aeed-1e7c5c9c785d
+# ╟─feff13a6-bc70-419b-ba52-7dc2cd0728ad
+# ╠═9e9a7534-a2ef-451b-a935-2b0b4db4912f
+# ╟─5aa727d6-884e-47ec-9939-37a0926fbb81
+# ╟─f180a681-8c05-4a05-aac9-0c9f26c3d0b7
 # ╠═334dd61b-787a-4a2c-b507-448791df917a
-# ╟─66a104cf-44d8-4a97-af89-82fe10a65510
+# ╟─4beeff1a-2a15-485f-82dd-0691e9dcbd14
 # ╠═a57f47ca-d280-4edf-8829-8ff36e906624
 # ╠═103bfdb6-7d4b-4a5f-963e-df8df3f94c6b
 # ╠═796f0ab7-c0c6-41e1-b83c-331a2be6c302
@@ -1021,17 +1037,21 @@ md"""
 # ╟─d9d22920-601f-4135-b529-bcc01caae23a
 # ╟─a73e8709-95ab-4d9c-9312-a0731d598f18
 # ╟─102aabd3-048c-4701-a384-27b525e80f9c
+# ╟─b0bc1b88-ccd9-4dd8-a9fe-7969ee698aeb
 # ╠═1845d970-4f90-4714-bc74-6e38b27160f4
 # ╟─d2d7984e-9298-42ac-92b2-99b612c6ec7e
 # ╠═c3181124-4c6a-478e-9886-02e085251ec3
+# ╟─d4dfc2d6-b967-4a6b-a64b-dba24b3318bc
 # ╠═b96a17ae-c2b8-428b-a965-ecd09bd2fee1
+# ╠═00b47a54-cae5-4a41-9d1a-cad8e4264c3f
 # ╠═325f8bb8-6097-49fb-99e7-a1cb34f27116
 # ╠═90e23bda-0665-4252-9675-81af96dfa04b
-# ╠═00b47a54-cae5-4a41-9d1a-cad8e4264c3f
+# ╟─8d3b719e-699b-40f8-be10-845519263475
 # ╟─f419f822-088f-40fa-b1c5-93d0bdaa0137
 # ╠═3fd46c0c-8154-4876-b635-a43dae5e22ce
 # ╟─e31fdb85-42ff-4169-867c-fafc35c19ebe
 # ╠═5ad55ef1-52ea-4de9-943b-57c5aed16fad
+# ╟─e98b27e1-14a5-4f94-97ad-ea25350bee86
 # ╟─86a1f5d6-3bb5-42f2-845f-4b615356b888
 # ╠═e77c4eae-6ff8-4906-aabc-683460537718
 # ╟─2c6c1627-df8e-4d88-a7fe-4233558536ab
@@ -1042,4 +1062,3 @@ md"""
 # ╠═fb14fb1b-f868-4af8-97d1-1f9923651120
 # ╟─4117497a-6055-41ce-92b6-dd2a0a151366
 # ╠═40d35ecd-8c2c-49be-b150-6ac7639fdee7
-# ╟─6541b03c-53af-4697-8092-74f4f29106ea
