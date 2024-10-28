@@ -45,6 +45,7 @@ md"""
 A tensor network contraction engine featuring:
 - Hyper-optimized contraction order
 - Automatic differentiation and GPU support
+
 """
 
 # ╔═╡ ec23abba-eaf0-4e7a-bf7e-b50ffbe9532f
@@ -52,8 +53,14 @@ md"""
 ## Matrix multiplication in tensor network representation
 """
 
+# ╔═╡ 1f6d1be8-5157-4115-b5d6-e4ad6d474dd5
+md"A contraction order, or an *einsum code*, is specified as an `EinCode` object started with `ein`"
+
 # ╔═╡ 0a83fd07-6dd3-4228-b435-c7f0c1ddbc12
 code = ein"ij,jk->ik"
+
+# ╔═╡ 1cf11208-acb2-4bbb-8342-140775c4a7c0
+md"`getixsv` and `getiyv` to obtain input/output indices:"
 
 # ╔═╡ e82c8140-c80e-4683-a72a-c8dec034c0a9
 getixsv(code)
@@ -61,16 +68,18 @@ getixsv(code)
 # ╔═╡ 8f153a7f-3977-44ce-8c9c-7540f6c84e2c
 getiyv(code)
 
+# ╔═╡ 9a66d58a-7958-4cf9-ba68-688323b74feb
+md"einsum codes can be called liked a function:"
+
 # ╔═╡ 4e849834-1f00-4283-ad7c-f7a783d77ab4
 A, B = randn(3,3), randn(3, 3);
 
 # ╔═╡ 0ddf1061-d53c-4561-943b-f4460ee58962
-# einsum code can be called liked a function
 R = code(A, B)
 
 # ╔═╡ c4e8f71a-3118-4455-a9a5-b427e2d19ba0
 md"""
-Meaning
+which means
 ```julia
 for i = 1:n_i
     for j = 1:n_j
@@ -93,6 +102,9 @@ code_long = ein"ij,jk,kl,lm->im"
 # ╔═╡ 56cfb6d5-1866-4318-a578-7b30660b1f45
 show_einsum(code_long; layout=StressLayout(optimal_distance=15))
 
+# ╔═╡ 95b29cc5-41e6-4ce6-a4d7-25337b96eaa4
+md"Einsum codes can take multiple tensors as input:"
+
 # ╔═╡ cee4366b-a6f0-4a75-bcab-82b77b31b451
 C, D = randn(3, 3), randn(3, 3)
 
@@ -103,6 +115,9 @@ code_long(A, B, C, D)
 md"""
 ## The matrix product state in physics
 """
+
+# ╔═╡ 1d6f4700-99f2-40b2-a8ed-8640de7c5039
+md"The following einsum code contracts multiple tensors to a *matrix product state*:"
 
 # ╔═╡ 27c769f8-52ec-496c-bea7-cc210af9df99
 code_mps = ein"aj,jbk,kcl,ldm,me->abcde"
@@ -127,8 +142,26 @@ md"An index in `einsum` can appear arbitrary times, not just 2!"
 # ╔═╡ 3c423eb5-b64a-4256-a41c-7d675d7396c8
 code_withbatch = ein"ijb,jkb->ikb" # b appears three times
 
+# ╔═╡ b43d4f75-59d4-49af-a07d-7cc5f4aee7e6
+md"""
+`code_withbatch(A, B, R)` means
+```julia
+for i = 1:n_i
+    for j = 1:n_j
+        for k = 1:n_k
+			for b = 1:n_b
+        		R[i, k, b] += A[i, j, b] * B[j, k, b]
+		end
+	end
+end
+```
+"""
+
 # ╔═╡ 6ce21263-bf2c-41b1-ac1f-5b4b29c94465
 md"## Optimize the contraction order"
+
+# ╔═╡ 609fb332-8067-4ffc-b678-7dbd3c879051
+md"`OMEinsum` offers handy tools for complexity analysis and optimization in tensor contraction."
 
 # ╔═╡ 095e3032-21f5-45d2-8b95-9df36047724c
 size.(tensors)
@@ -139,9 +172,15 @@ code_mps
 # ╔═╡ cdf5ffd0-28a8-4a53-81b4-19037bb3e7cb
 OMEinsum.getixsv(code_mps)
 
+# ╔═╡ 344020d5-88b3-45db-8641-5ae1f690871f
+md"Bond dimensions of tensors to contract is recorded in a `dictionary`"
+
 # ╔═╡ c4eac832-3629-41bf-8dc9-5b2a6d3d914b
 # extract sizes into a dictionary
 size_dict = OMEinsum.get_size_dict(getixsv(code_mps), tensors)
+
+# ╔═╡ c1e2fcdb-c12f-4743-ab7e-c0d2feb5ab2f
+md"Given the contraction order and bond dimensions, one can easily estimate contraction complexity"
 
 # ╔═╡ 3c84890c-0371-44cb-a9c7-ae76adeb0307
 # The complexity is too high
@@ -169,8 +208,14 @@ size_dict_inner = OMEinsum.get_size_dict(getixsv(code_inner_product), tensors_in
 # ╔═╡ b176805b-ef1f-4cec-922a-f653ace76ce4
 contraction_complexity(code_inner_product, size_dict_inner)
 
+# ╔═╡ e564c83b-2b20-4c1a-87a4-1abc3c504c0c
+md"Given the contraction order and bond dimensions, ne can use `optimize_code` to obtain a optimized order"
+
 # ╔═╡ f80aa1e7-1a92-4a52-a070-d382fa36dcb3
 optcode = optimize_code(code_inner_product, size_dict_inner, TreeSA())
+
+# ╔═╡ 1cbf610c-2a91-4b4b-baa3-baa15848ca7b
+md"TODO: Bug fix"
 
 # ╔═╡ 2656103c-fe7f-4a76-9f89-57aadc892824
 # ╠═╡ show_logs = false
@@ -184,6 +229,9 @@ contraction_complexity(optcode, size_dict_inner)
 
 # ╔═╡ 9411e8b2-aa55-487f-b666-5eb1e3a821d9
 md"## The available optimization methods"
+
+# ╔═╡ 5ceb3861-c2bd-4e2f-9007-6285d1347027
+md"Several types of optimization methods are offered:"
 
 # ╔═╡ dce59830-0885-40fb-9693-b9f070f2388b
 subtypes(CodeOptimizer)
@@ -218,7 +266,7 @@ md"## Slicing technique"
 
 # ╔═╡ 754640f1-5621-460d-87de-8c90665db8c4
 md"""
-Slicing is a technique to reduce memory cost, by unfolding some variables.
+Slicing is a technique to **reduce memory cost** by unfolding some variables.
 """
 
 # ╔═╡ 095d5fa0-6f85-4f4e-9ec0-18768f6839fb
@@ -254,7 +302,7 @@ nodestore() do ns
 		LuxorGraphPlot.text("i", (nodes[1].loc + nodes[4].loc)/2 + LuxorGraphPlot.Point(0, 15))
 		LuxorGraphPlot.Luxor.sethue("black")
 		LuxorGraphPlot.text("=", 100, 30)
-		LuxorGraphPlot.text("for i = 1:n_i", 140, -20)
+		LuxorGraphPlot.text("for i = 1: n_i", 140, -20)
 		LuxorGraphPlot.text("end", 140, 80)
 	end
 end
@@ -264,16 +312,16 @@ md"""
 # Tensor network for quantum circuit simulation: Yao.jl
 """
 
+# ╔═╡ e49d57c4-d215-4409-b7ad-f7206b2aec89
+md"`Yao` is a framework for quantum circuit simulation in Julia Language."
+
 # ╔═╡ 33f37f98-53e9-45b4-919a-2b9b1481f4ce
 md"""
 ## Simulate a quantum circuit
 """
 
-# ╔═╡ e49d57c4-d215-4409-b7ad-f7206b2aec89
-md"Yao is a quantum circuit simulator."
-
 # ╔═╡ 5b263f0a-5885-4968-b14b-07bb5bc2f1a9
-md"Let us initialize a quantum Fourier transformation circuit."
+md"Let us initialize a *quantum Fourier transformation* circuit."
 
 # ╔═╡ 920a9962-e83f-473c-977a-eab34ec26872
 Basic(:π) # Basic is a symbolic type
@@ -285,7 +333,7 @@ md"The Hadamard gate"
 vizcircuit(H)
 
 # ╔═╡ ddb5868a-7406-4f6f-971d-16394f4cea3b
-mat(Basic, H)
+mat(Basic, H) # Basic is a symbolic type
 
 # ╔═╡ 5af0aca3-acd3-4172-b922-91c5568fbb35
 md"""
@@ -296,7 +344,7 @@ The CPhase gate
 vizcircuit(control(2, 2, 1=>shift(Basic(:θ))))
 
 # ╔═╡ bbe08769-858a-445f-a162-34cd7134ffd1
-mat(Basic, control(2, 2, 1=>shift(Basic(:θ))))
+mat(Basic, control(2, 2, 1=>shift(Basic(:θ)))) # 2 qubits in total. Control: qubit-2, target: qubit-1
 
 # ╔═╡ f32a5030-8c21-4859-82e8-8953cf8b534f
 function qft_circuit(n::Int)
@@ -325,7 +373,7 @@ md"""
 """
 
 # ╔═╡ 9671c446-775e-4cb3-8e95-7c32480eeb07
-md"The tensor network representation:"
+md"Quantum gates have a tensor network representation:"
 
 # ╔═╡ a3f038a5-8f09-4c33-bf71-ed07e03037b3
 nodestore() do ns
@@ -350,8 +398,8 @@ nodestore() do ns
 		LuxorGraphPlot.text("maps to", 80, 3)
 		stroke.(cons0)
 		stroke.(cons)
-		LuxorGraphPlot.text("i", DX-10, 0)
-		LuxorGraphPlot.text("j", DX+2dx+10, 0)
+		LuxorGraphPlot.text("i", DX-10, 3.5)
+		LuxorGraphPlot.text("j", DX+2dx+10, 3.5)
 	end
 end
 
@@ -372,14 +420,14 @@ nodestore() do ns
 	scs = [circle!((DX+dx, 0), sr), circle!((DX+dx, dy), sr)]
 	cons = [Connection(dots[1], dots[2]), Connection(dots[3], dots[4]), Connection(scs[1], c), Connection(scs[2], c)]
 
-	with_nodes(ns; padding_top=20, padding_bottom=0, padding_left=20) do
+	with_nodes(ns; padding_top=20, padding_bottom=23, padding_left=20) do
 		stroke(c)
 		fill.(scs)
 		LuxorGraphPlot.fontsize(14)
 		LuxorGraphPlot.text("θ", c)
 		stroke.(cons)
-		LuxorGraphPlot.text("i", DX+dx, -8)
-		LuxorGraphPlot.text("j", DX+dx, dy+15)
+		LuxorGraphPlot.text("i", DX+dx-1.5, -8)
+		LuxorGraphPlot.text("j", DX+dx-1.5, dy+17)
 		
 		LuxorGraphPlot.text("maps to", 90, 23)
 
@@ -394,7 +442,12 @@ end
 mat(control(2, 1, 2=>shift(Basic(:π)/2)))
 
 # ╔═╡ cb012a72-f5d8-41b7-9146-0cb184269801
-reshape(ein"ij->ijij"([1 1; 1 exp(im*Basic(:π)/2)]), 4, 4)
+reshape(ein"ij->ijij"([1 1; 1 exp(im * pi / 2)]), 4, 4)
+#reshape(ein"ij->ijij"([1 1; 1 exp(im*Basic(:π)/2)]), 4, 4)
+#ein"ij->ijij"([1 1; 1 exp(im*π/2)])
+
+# ╔═╡ 8f7d7e0f-1fe1-4ac6-b0a3-4225368a8518
+md"TODO: Replaced `exp(im*Basic(:π)/2)` (which was not functioning) with `exp(im * pi / 2)`. Plz verify if this aligns with the intended expression."
 
 # ╔═╡ d2833db0-7f86-493b-b96e-8747f782f129
 md"## Convert a circuit to a tensor network"
@@ -419,7 +472,7 @@ nodestore() do ns
 	with_nodes(ns; padding_left=20, padding_right=20) do
 		stroke(c)
 		stroke.(cons)
-		LuxorGraphPlot.text("i", dx+10, 0)
+		LuxorGraphPlot.text("i", dx+10, 3)
 	end
 end
 
@@ -475,6 +528,9 @@ nodestore() do ns
 	end
 end
 
+# ╔═╡ 068b408b-c67b-444e-8610-8d65b778301e
+md"TODO: $\frac{\pi}{4}$ obscured"
+
 # ╔═╡ c82d42d1-b542-464a-86ce-b294ba1794fd
 md"""
 The output indices are left open at this moment.
@@ -487,18 +543,24 @@ md"""
 
 # ╔═╡ 6e7dafd6-9998-4d5a-8bc1-d99e8d1f4e47
 md"""
-The observable $X_1X_2X_3 X_4$:
+Consider an observable $X_1X_2X_3 X_4$ as follows:
 """
 
 # ╔═╡ 1131347f-389a-4941-ad87-07480a8f97c5
 observable = chain(4, [put(4, i=>X) for i in 1:4]);
+
+# ╔═╡ b54bc644-4586-4f46-b46c-1587c3e8b31c
+md"We calculte its expectation value using two equivalent methods: quantum circuits and tensor networks.
+
+To begin with, initialize 4 qubits in zero states"
 
 # ╔═╡ 51c319c4-d729-4774-80b3-b00b5945fced
 reg = zero_state(4)
 
 # ╔═╡ 9f951589-a522-4d96-868a-5ab259f6ba7b
 md"""
-For a given state $|\psi\rangle$, the expectation value is: $\langle \psi|X_1X_2X_3X_4|\psi\rangle$
+For a given state $|\psi\rangle$, the expectation value is: $\langle \psi|X_1X_2X_3X_4|\psi\rangle$\
+Here, $|\psi\rangle$ is specified as `qft`$|0\rangle^{\otimes 4}$
 """
 
 # ╔═╡ 5aa12b6b-7b98-44e1-9fe5-4c34f7950aa1
@@ -508,10 +570,16 @@ expect(observable, reg=>qft)
 # ╔═╡ 607ba3e1-a95d-4c05-825e-37ea538df099
 extended_circuit = chain(qft, observable, qft'); vizcircuit(extended_circuit)
 
+# ╔═╡ baff0c2b-3721-44b2-a84c-7a83eed0daf9
+md"Similarly, the expectation value can be calculated by contracting a tensor network with specified input and output states"
+
 # ╔═╡ ccffa22f-b5e1-4c36-b93b-cba41bbbca41
 # initial states is specified by a dictionary (location => state).
 # lines with no specified states are left open.
 input_states = Dict([i=>zero_state(1) for i in 1:4])
+
+# ╔═╡ 6083f736-e001-4961-8010-047f18ea1861
+md"`yao2einsum` converts the given circuit into a tensor network, with the contraction order optimized selectively"
 
 # ╔═╡ 507e2118-ba05-4e7a-9b3b-54d4818401c7
 qft_net = yao2einsum(extended_circuit; initial_state = input_states, final_state = input_states, optimizer = TreeSA(nslices=2))
@@ -520,25 +588,31 @@ qft_net = yao2einsum(extended_circuit; initial_state = input_states, final_state
 # we use the stress graph layout.
 show_einsum(qft_net.code; layout=StressLayout(optimal_distance=20))
 
-# ╔═╡ e1815e51-859f-4ee0-a458-62fc44997444
-md"TODO: Better illustration for input indices"
-
 # ╔═╡ cd81e14e-7f1c-416b-8dd2-3ab1546995aa
 contraction_complexity(qft_net)
 
 # ╔═╡ bdef27a3-0c0f-4349-a134-0020e0e1efd0
-contract(qft_net)
+contract(qft_net) # Alternative way to calculate <reg|qft' observable qft|reg>
 
 # ╔═╡ 5e11bfc0-d1c9-4a86-9eef-9c20488c8f93
 md"# Combinatorial optimization"
+
+# ╔═╡ 948f5a2a-0feb-4e00-a3ad-d9c1b2f4771d
+md"TODO: Consider replacing ‘Combinatorial Optimization’ with ‘Tensor Network for Solving Combinatorial …’ to align with the titles of other sections"
 
 # ╔═╡ ef3c35e8-c7ec-4a18-894c-7e511b598aa4
 md"""
 ## Tensor network for solving combinatorial optimization problems: GenericTensorNetworks.jl
 """
 
+# ╔═╡ 53d3630c-c660-4c9a-9a1b-443613c17f6d
+md"`GenericTensorNetworks.jl` implements generic tensor networks to compute solution space properties of a class of hard combinatorial problems"
+
 # ╔═╡ 889a4baf-842c-4429-b472-394eb35d8600
-graph = random_diagonal_coupled_graph(7, 6, 0.8)
+graph = random_diagonal_coupled_graph(7, 6, 0.8) # Create a mxn random masked diagonal coupled square lattice graph, with number of vertices equal to ⌊m×n×ρ⌉
+
+# ╔═╡ f4b5b37f-7929-41b5-9ca7-61166760e1bb
+md"TODO: Whether to introduce `LuxorGraphPlot`"
 
 # ╔═╡ 2fca90fd-16b4-4621-85c7-96b1ba7f82b8
 show_graph(graph, StressLayout(optimal_distance=20))
@@ -546,15 +620,21 @@ show_graph(graph, StressLayout(optimal_distance=20))
 # ╔═╡ d2ef3090-4786-4391-8b8a-c7d9a7f1b511
 md"## Independent set problem"
 
+# ╔═╡ 456ea74b-da18-4410-a886-fbba94498dab
+md"TODO: Mix-up between problems like independent sets, maximum independent sets, maximum independent set size, etc. Need to clarify these concepts and their relationship to partition functions."
+
 # ╔═╡ c0022c3e-a56c-4363-8d6e-e70f0178a754
 LocalResource("idp.png", :width=>200)
 
 # ╔═╡ b9c74fbd-9836-46ac-b832-42731fcfc7ed
 md"""
-An independent set is a set of vertices in a graph, no two of which are adjacent.
+An *independent set* is a set of vertices in a graph where no two vertices are adjacent.
 - Independent sets: $\{\}, \{a\}, \{b\}, \{c\},\{d\},\{e\}, \{a,e\}, \{b, d\}, \{b, e\}, \{d, e\}, \{b, d, e\}$
 - Maximum independent set (MIS): ${b, d, e}$, size $\alpha(G) = 3$.
 """
+
+# ╔═╡ d9a7c4da-f633-4662-91af-ae97f525c248
+md"The *independent set problem* is to find all independent sets given a graph $G$ and the *MIS problem* is to find all MIS or to calculate the size of MIS"
 
 # ╔═╡ 8ebfc7a9-973e-421b-88fe-0adc3fbd076f
 problem = GenericTensorNetworks.IndependentSet(graph)  # Independent set problem
@@ -566,7 +646,7 @@ md"""
 
 # ╔═╡ 37442c16-ac1a-4c2f-b54b-91abac834a22
 md"""
-MIS is encoded in the _ground state_ of the Hamiltonian:
+Independent sets are encoded in the *eigenstates* of the following Hamiltonian and MIS corresponds to the _ground state_:
 
 $$H(\mathbf{n}) = \underbrace{- \sum_{v \in V} n_v}_{\text{weights}} + \underbrace{\sum_{(v, w) \in E}  \infty n_v n_w}_{\text{independence constraints}}.$$
 
@@ -589,19 +669,23 @@ Partition function:
 $$Z = \sum_{\mathbf{n} \in \{0, 1\}^{|V|}} e^{-\beta H(\mathbf{n})}.$$
 """
 
+# ╔═╡ d1814364-73bd-422c-bc49-2f7856247038
+md"TODO: check the second line of equations below"
+
 # ╔═╡ 0144e548-4517-48f4-ad8d-1b06ac12df1c
 md"""
-Partition function is a sum product netework (tensor network)
+The Partition function is a sum product network and thus a tensor network
 
 $$\begin{align*}
 Z &= \sum_{\mathbf{n} \in \{0, 1\}^{|V|}} \exp\left(\beta \sum_{v \in V} n_v - \underbrace{\beta \sum_{(v, w) \in E} \infty n_v n_w}_{\text{independence constraint}}\right) \\
-&= \sum_{\mathbf{n} \in \{0, 1\}^{|V|}} \prod_{v\in V}\exp\left(\beta \sum_{v \in V} n_v\right)  \prod_{(v, w) \in E}\exp\left(- \beta \sum_{(v, w) \in E} \infty n_v n_w\right)
+&= \sum_{\mathbf{n} \in \{0, 1\}^{|V|}} \prod_{v\in V}\exp\left(\beta  n_v\right)  \prod_{(v, w) \in E}\exp\left(- \beta \cdot \infty n_v n_w\right)
 \end{align*}$$
 """
 
+# ╔═╡ 3edc1c09-671e-4076-aeaf-a4c85c4cdba3
+md"Convert an indepent set problem to a tensor network, with contraction order optimized selectively"
+
 # ╔═╡ f01b2afd-89bf-4775-a80b-1e336c7fcc60
-# Convert an independent set problem to tensor network, and
-# optimize the contraction order
 generic_tn = GenericTensorNetwork(problem, optimizer=TreeSA())
 
 # ╔═╡ 6d14bc3f-026a-4e6a-9734-cb987a528af3
@@ -611,9 +695,15 @@ fieldnames(generic_tn |> typeof)
 # ╔═╡ 7110cb89-3395-44c3-aa42-e255e03d4cd2
 show_einsum(generic_tn.code, layout=StressLayout(optimal_distance=20))
 
+# ╔═╡ a3d003f7-b76e-4499-b350-962dfc2b68ce
+md"`solve` provides solutions under certain constraints"
+
 # ╔═╡ 334dd61b-787a-4a2c-b507-448791df917a
 # SizeMax(): The maximum solution size
 res_size = solve(generic_tn, SizeMax())[]  # MIS size
+
+# ╔═╡ 66a104cf-44d8-4a97-af89-82fe10a65510
+md"TODO: Clarity relation between `x` and $\beta$ in the partition function"
 
 # ╔═╡ a57f47ca-d280-4edf-8829-8ff36e906624
 # CountingMax(2): Count solutions with largest 2 sizes
@@ -641,10 +731,10 @@ md"# Tensor network for probabilistic inference: TensorInference.jl"
 md"""
 ## Package features
 Solutions to the most common probabilistic inference tasks, including:
-- Probability of evidence (PR): Calculates the total probability of the observed evidence across all possible states of the unobserved variables.
-- Marginal inference (MAR): Computes the probability distribution of a subset of variables, ignoring the states of all other variables.
-- Maximum a Posteriori Probability estimation (MAP): Finds the most probable state of a subset of unobserved variables given some observed evidence.
-- Marginal Maximum a Posteriori (MMAP): Finds the most probable state of a subset of variables, averaging out the uncertainty over the remaining ones.
+- *Probability of evidence* (PR): Calculates the total probability of the observed evidence across all possible states of the unobserved variables
+- *Marginal inference* (MAR): Computes the probability distribution of a subset of variables, ignoring the states of all other variables
+- *Maximum a Posteriori Probability estimation* (MAP): Finds the most probable state of a subset of unobserved variables given some observed evidence
+- *Marginal Maximum a Posteriori* (MMAP): Finds the most probable state of a subset of variables, averaging out the uncertainty over the remaining ones
 """
 
 # ╔═╡ 102aabd3-048c-4701-a384-27b525e80f9c
@@ -691,12 +781,12 @@ ASIA network model.
 
 ---
 
-We now demonstrate how to use the TensorInference.jl package for conducting a
+We now demonstrate how to use the `TensorInference.jl` package for conducting a
 variety of inference tasks on the Asia network.
 
 ---
 
-Import the TensorInference package, which provides the functionality needed
+Import the `TensorInference` package, which provides the functionality needed
 for working with tensor networks and probabilistic graphical models.
 """
 
@@ -794,18 +884,23 @@ md"""
 # ╟─c12e790f-769c-4277-b41d-81d08c0e134c
 # ╠═b9970d7f-9a69-424e-89c0-bbfcfe5f12d7
 # ╟─ec23abba-eaf0-4e7a-bf7e-b50ffbe9532f
+# ╟─1f6d1be8-5157-4115-b5d6-e4ad6d474dd5
 # ╠═0a83fd07-6dd3-4228-b435-c7f0c1ddbc12
+# ╠═1cf11208-acb2-4bbb-8342-140775c4a7c0
 # ╠═e82c8140-c80e-4683-a72a-c8dec034c0a9
 # ╠═8f153a7f-3977-44ce-8c9c-7540f6c84e2c
+# ╟─9a66d58a-7958-4cf9-ba68-688323b74feb
 # ╠═4e849834-1f00-4283-ad7c-f7a783d77ab4
 # ╠═0ddf1061-d53c-4561-943b-f4460ee58962
-# ╟─c4e8f71a-3118-4455-a9a5-b427e2d19ba0
+# ╠═c4e8f71a-3118-4455-a9a5-b427e2d19ba0
 # ╟─6af3c70e-5a7e-4ab8-baf1-d666fea321cb
 # ╠═3b9821b6-851d-4509-aa7c-7ac7c8d57399
 # ╠═56cfb6d5-1866-4318-a578-7b30660b1f45
+# ╟─95b29cc5-41e6-4ce6-a4d7-25337b96eaa4
 # ╠═cee4366b-a6f0-4a75-bcab-82b77b31b451
 # ╠═15c74390-bb16-4ea6-8e6e-70f9628304c4
 # ╟─008b26e8-862b-4e4a-8d76-fd671defca4f
+# ╟─1d6f4700-99f2-40b2-a8ed-8640de7c5039
 # ╠═27c769f8-52ec-496c-bea7-cc210af9df99
 # ╠═f93ed0d4-bb49-462e-88ad-3995c2a9532c
 # ╠═ca5d4d5b-dfe3-4fd8-a5b2-6cbe70ef84a4
@@ -813,11 +908,15 @@ md"""
 # ╟─4d412abe-17b3-46bf-99fe-b133b20610ee
 # ╟─d1a325de-7ff3-43b5-87db-1615f746c5a2
 # ╠═3c423eb5-b64a-4256-a41c-7d675d7396c8
+# ╟─b43d4f75-59d4-49af-a07d-7cc5f4aee7e6
 # ╟─6ce21263-bf2c-41b1-ac1f-5b4b29c94465
+# ╟─609fb332-8067-4ffc-b678-7dbd3c879051
 # ╠═095e3032-21f5-45d2-8b95-9df36047724c
 # ╠═a0369e77-e8ca-41a2-9bf0-864cefa57a6a
 # ╠═cdf5ffd0-28a8-4a53-81b4-19037bb3e7cb
+# ╟─344020d5-88b3-45db-8641-5ae1f690871f
 # ╠═c4eac832-3629-41bf-8dc9-5b2a6d3d914b
+# ╠═c1e2fcdb-c12f-4743-ab7e-c0d2feb5ab2f
 # ╠═3c84890c-0371-44cb-a9c7-ae76adeb0307
 # ╟─98cafa86-1fa5-43b9-b479-3f0893fecbb8
 # ╟─a40cbf4b-4f5d-443c-8463-b4e9b5e6edcd
@@ -825,11 +924,14 @@ md"""
 # ╠═d7a7e5d5-5eae-4d92-8ce0-309702d0c777
 # ╠═c6b639a2-d5f4-47b6-84db-83682cc9b722
 # ╠═b176805b-ef1f-4cec-922a-f653ace76ce4
+# ╟─e564c83b-2b20-4c1a-87a4-1abc3c504c0c
 # ╠═f80aa1e7-1a92-4a52-a070-d382fa36dcb3
+# ╟─1cbf610c-2a91-4b4b-baa3-baa15848ca7b
 # ╠═2656103c-fe7f-4a76-9f89-57aadc892824
 # ╠═05171dfb-a005-448d-856a-4f1d417451b0
 # ╠═750ab594-9990-4ad1-a8c8-e66ea058909d
 # ╟─9411e8b2-aa55-487f-b666-5eb1e3a821d9
+# ╟─5ceb3861-c2bd-4e2f-9007-6285d1347027
 # ╠═dce59830-0885-40fb-9693-b9f070f2388b
 # ╟─63e793e3-6eb1-4c65-8041-99beb33dc1fa
 # ╟─1484dee3-df3f-4aaa-8c32-78eea3133e8f
@@ -837,11 +939,11 @@ md"""
 # ╟─90f342ba-0a56-4702-afd5-6a8c49964b19
 # ╟─decce1ca-cd63-494c-8db5-c46990fdb740
 # ╟─754640f1-5621-460d-87de-8c90665db8c4
-# ╟─095d5fa0-6f85-4f4e-9ec0-18768f6839fb
+# ╠═095d5fa0-6f85-4f4e-9ec0-18768f6839fb
 # ╟─25f8e2f2-022e-4c65-aff3-4af8fe43a5dc
-# ╟─33f37f98-53e9-45b4-919a-2b9b1481f4ce
 # ╟─e49d57c4-d215-4409-b7ad-f7206b2aec89
 # ╠═c3cc1bd0-68e6-430c-b306-696c51165b9c
+# ╟─33f37f98-53e9-45b4-919a-2b9b1481f4ce
 # ╟─5b263f0a-5885-4968-b14b-07bb5bc2f1a9
 # ╠═920a9962-e83f-473c-977a-eab34ec26872
 # ╟─d96500ba-ade4-4666-a37b-222673960117
@@ -859,45 +961,58 @@ md"""
 # ╟─6173ea8a-a9e7-40e8-badb-601f8e96bd7d
 # ╠═f4e57c8d-57d3-4ee1-9cfe-06bfac8ac87f
 # ╠═cb012a72-f5d8-41b7-9146-0cb184269801
+# ╟─8f7d7e0f-1fe1-4ac6-b0a3-4225368a8518
 # ╟─d2833db0-7f86-493b-b96e-8747f782f129
 # ╟─29a41d88-7531-4914-866f-bc4185bde8c2
 # ╟─ae35e03a-0da9-496f-b942-ff312fb2b366
 # ╟─faafeff1-c964-440c-a2e8-640fd323f5ae
 # ╟─a991e849-b397-40c6-8036-b9aa728f4c22
 # ╟─e229dd53-bf34-4048-8464-61cc35225225
+# ╟─068b408b-c67b-444e-8610-8d65b778301e
 # ╟─c82d42d1-b542-464a-86ce-b294ba1794fd
 # ╟─3190b0a1-3c67-412f-8002-f3d9c8cf64a3
 # ╟─6e7dafd6-9998-4d5a-8bc1-d99e8d1f4e47
 # ╠═1131347f-389a-4941-ad87-07480a8f97c5
+# ╟─b54bc644-4586-4f46-b46c-1587c3e8b31c
 # ╠═51c319c4-d729-4774-80b3-b00b5945fced
 # ╟─9f951589-a522-4d96-868a-5ab259f6ba7b
 # ╠═5aa12b6b-7b98-44e1-9fe5-4c34f7950aa1
 # ╠═607ba3e1-a95d-4c05-825e-37ea538df099
+# ╟─baff0c2b-3721-44b2-a84c-7a83eed0daf9
 # ╠═ccffa22f-b5e1-4c36-b93b-cba41bbbca41
+# ╟─6083f736-e001-4961-8010-047f18ea1861
 # ╠═507e2118-ba05-4e7a-9b3b-54d4818401c7
 # ╠═72c31b7e-1bc0-4518-9a67-be6a0593a431
-# ╟─e1815e51-859f-4ee0-a458-62fc44997444
 # ╠═cd81e14e-7f1c-416b-8dd2-3ab1546995aa
 # ╠═bdef27a3-0c0f-4349-a134-0020e0e1efd0
 # ╟─5e11bfc0-d1c9-4a86-9eef-9c20488c8f93
+# ╟─948f5a2a-0feb-4e00-a3ad-d9c1b2f4771d
 # ╟─ef3c35e8-c7ec-4a18-894c-7e511b598aa4
+# ╟─53d3630c-c660-4c9a-9a1b-443613c17f6d
 # ╠═332085f3-ef12-4a7d-9714-e8f4a88d5a28
 # ╠═889a4baf-842c-4429-b472-394eb35d8600
+# ╟─f4b5b37f-7929-41b5-9ca7-61166760e1bb
 # ╠═5c3dfeeb-3dd2-4a4d-a1b7-2d292beccf73
 # ╠═2fca90fd-16b4-4621-85c7-96b1ba7f82b8
 # ╟─d2ef3090-4786-4391-8b8a-c7d9a7f1b511
+# ╟─456ea74b-da18-4410-a886-fbba94498dab
 # ╟─c0022c3e-a56c-4363-8d6e-e70f0178a754
-# ╟─b9c74fbd-9836-46ac-b832-42731fcfc7ed
+# ╠═b9c74fbd-9836-46ac-b832-42731fcfc7ed
+# ╟─d9a7c4da-f633-4662-91af-ae97f525c248
 # ╠═8ebfc7a9-973e-421b-88fe-0adc3fbd076f
 # ╟─f8d7ade9-183c-4965-851f-3b729ba4c4c7
 # ╟─37442c16-ac1a-4c2f-b54b-91abac834a22
 # ╟─81ae7d6f-ec4b-48de-a86f-613476d71122
 # ╟─ef57dd09-b249-4f03-bf19-0947ba8e173a
+# ╟─d1814364-73bd-422c-bc49-2f7856247038
 # ╟─0144e548-4517-48f4-ad8d-1b06ac12df1c
+# ╟─3edc1c09-671e-4076-aeaf-a4c85c4cdba3
 # ╠═f01b2afd-89bf-4775-a80b-1e336c7fcc60
 # ╠═6d14bc3f-026a-4e6a-9734-cb987a528af3
 # ╠═7110cb89-3395-44c3-aa42-e255e03d4cd2
+# ╟─a3d003f7-b76e-4499-b350-962dfc2b68ce
 # ╠═334dd61b-787a-4a2c-b507-448791df917a
+# ╟─66a104cf-44d8-4a97-af89-82fe10a65510
 # ╠═a57f47ca-d280-4edf-8829-8ff36e906624
 # ╠═103bfdb6-7d4b-4a5f-963e-df8df3f94c6b
 # ╠═796f0ab7-c0c6-41e1-b83c-331a2be6c302
