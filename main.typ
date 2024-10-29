@@ -229,6 +229,8 @@ Tree width (measures how similar a graph is to a tree):
 
 TODO: show yao, and code.
 
+#image("images/2024-10-29-20-52-30.png", width: 100pt)
+
 #grid([
   #image("images/2024-10-29-17-01-04.png", width: 400pt)
 ], codebox([
