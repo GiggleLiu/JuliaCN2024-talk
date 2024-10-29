@@ -7,6 +7,10 @@
 #import "@preview/pinit:0.1.3": *
 #import "@preview/colorful-boxes:1.2.0": *
 
+#show raw.where(block: true): it=>{
+  par(justify:false,block(fill:rgb("#f0f0fe"),inset:1.5em,width:99%,text(it)))
+}
+
 #set cite(style: "apa")
 
 #let s = hkustgz-theme.register()
@@ -96,8 +100,15 @@
 
 == Large scale tensor network contraction
 *Tensor*
+- Vector : $bb(N)^+ arrow.r "element"$
+- Matrix : $bb(N)^+ times bb(N)^+ arrow.r "element"$
+- Tensor : $bb(N)^+ times dots.c times bb(N)^+ arrow.r "element"$
 
 *Tensor network*
+$ (Lambda, cal(T)) $
+$
+O_() = sum_()
+$
 
 == Tensor network contraction
 #let poly() = {
@@ -149,6 +160,10 @@ Tree width (measures how similar a graph is to a tree):
 == Quantum circuit simulation
 
 TODO: show yao, and code.
+
+```julia
+julia> using Yao
+```
 
 == Tensor network, a natural modeling of many-body systems
 
