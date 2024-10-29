@@ -98,17 +98,81 @@
 #align(bottom+right, [Note: GSoC: Google Summer of Code])
 
 
-== Large scale tensor network contraction
-*Tensor*
-- Vector : $bb(N)^+ arrow.r "element"$
-- Matrix : $bb(N)^+ times bb(N)^+ arrow.r "element"$
-- Tensor : $bb(N)^+ times dots.c times bb(N)^+ arrow.r "element"$
+== Vector, matrix and tensor
+#v(100pt)
+#align(top+center, grid([*Vector:*], [`v[i]` $arrow.r$ ], [
+#canvas({
+  import draw: *
+  tensor((0, 0), "v", [$v$])
+  line("v", (rel: (1.5, 0), to: "v"))
+  content((1.7, 0), [$i$])
+})
+], [*Matrix:*], [`A[i,j]` $arrow.r$ ], [
+#canvas({
+  import draw: *
+  tensor((0, 0), "A", [$A$])
+  line("A", (rel: (1.5, 0), to: "A"))
+  line("A", (rel: (-1.5, 0), to: "A"))
+  content((-1.7, 0), [$i$])
+  content((1.7, 0), [$j$])
+})],
+[*Tensor:*], [`T[i,j,k,...]` $arrow.r$ ], [
+#canvas({
+  import draw: *
+  tensor((0, 0), "T", [$T$])
+  line("T", (rel: (-0.8, -1.3), to: "T"))
+  line("T", (rel: (-1.5, 0), to: "T"))
+  line("T", (rel: (0.5, -1.5), to: "T"))
+  content((-1.7, 0), [$i$])
+  content((-1.1, -1.6), [$j$])
+  content((0.5, -1.9), [$k$])
+  content((1.5, 0.0), [$dots$])
+})
+], columns: 3, gutter: 20pt))
 
-*Tensor network*
-$ (Lambda, cal(T)) $
-$
-O_() = sum_()
-$
+== Tensor network contraction is a modern BLAS
+*Dot product*
+#align(center, canvas({
+  import draw: *
+  tensor((0, 0), "A", [$v$])
+  tensor((3, 0), "B", [$w$])
+  labelnode((1.5, 0), "i")
+  line("A", "i")
+  line("B", "i")
+
+  content((2.0, -0.2), [contract $lr((#v(50pt)#h(120pt))) = sum_(i) v_i w_i$])
+}))
+
+*Matrix-vector multiplication*
+#align(center, canvas({
+  import draw: *
+  tensor((0, 0), "A", [$v$])
+  tensor((3, 0), "B", [$A$])
+  labelnode((1.5, 0), "j")
+  line("A", "j")
+  line("B", "j")
+  line("B", (rel: (1.5, 0), to: "B"))
+  content((rel: (1.7, 0), to:"B"), [$i$])
+
+  content((3, -0.2), [contract $lr((#v(50pt)#h(160pt))) = sum_(j) A_(i j) v_j$])
+}))
+
+#align(bottom+right, [Note: BLAS = Basic Linear Algebra Subprograms])
+
+== Tensor network contraction is a modern BLAS
+*Tensor network contraction*
+#align(center, canvas({
+  import draw: *
+  demo()
+  content("A", [A])
+  content("B", [B])
+  content("C", [C])
+  content("D", [D])
+  content("E", [E])
+  content("F", [F])
+  content((5.3, 1.2), [contract $lr((#v(120pt)#h(170pt))) = sum_(a b c d e) A_(a b) B_(a d) C_(a c) D_(c d) E_(d e)$])
+}))
+
 
 == Tensor network contraction
 #let poly() = {
