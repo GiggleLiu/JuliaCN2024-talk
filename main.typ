@@ -7,9 +7,9 @@
 #import "@preview/pinit:0.1.3": *
 #import "@preview/colorful-boxes:1.2.0": *
 
-#show raw.where(block: true): it=>{
-  par(justify:false,block(fill:rgb("#f0f0fe"),inset:1.5em,width:99%,text(it)))
-}
+// #show raw.where(block: true): it=>{
+//   par(justify:false,block(fill:rgb("#f0f0fe"),inset:1.5em,width:99%,text(it)))
+// }
 
 #set cite(style: "apa")
 
@@ -45,6 +45,9 @@
 #let labelnode(loc, label) = {
   import draw: *
   content(loc, [$#label$], align: center, fill:white, frame:"rect", padding:0.12, stroke: none, name: label)
+}
+#let codebox(txt, width: auto) = {
+  box(inset: 10pt, stroke: blue.lighten(70%), radius:4pt, fill: blue.transparentize(90%), text(12pt, txt), width: width)
 }
 
 #let demo() = {
@@ -170,11 +173,14 @@
   content("D", [D])
   content("E", [E])
   content("F", [F])
-  content((5.3, 1.2), [contract $lr((#v(120pt)#h(170pt))) = sum_(a b c d e) A_(a b) B_(a d) C_(a c) D_(c d) E_(d e)$])
+  content((5.7, 1.2), [contract $lr((#v(120pt)#h(170pt))) = sum_(a b c d e) A_(a b) B_(a d) C_(a c) D_(c d) E_(b c) F_(d e)$])
 }))
 
+- Linear, parallelizable, differentiable, $dots$
 
-== Tensor network contraction
+#align(bottom+right, box(width: 500pt, align(left, [$"Note: In this talk, " "tensor network" = &"einsum"\ = &"sum-product network"$])))
+
+== Tensor network contraction order
 #let poly() = {
   polygon(
   fill: blue.lighten(80%),
@@ -219,15 +225,26 @@ Tree width (measures how similar a graph is to a tree):
 - $L times L$ grid graph: $O(L)$
 - $n$-vertex 3-regular graph: $approx n/6$
 
-@pan2022solving : Solving the sampling problem of the sycamore quantum circuits
-
 == Quantum circuit simulation
 
 TODO: show yao, and code.
 
+#grid([
+  #image("images/2024-10-29-17-01-04.png", width: 400pt)
+], codebox([
 ```julia
 julia> using Yao
+qft = EasyBuild.qft_circuit(4);
+observable = chain(4, [put(4, i=>X) for i in 1:4]);
+input_states = Dict([i=>zero_state(1) for i in 1:4])
+extended_circuit = chain(qft, observable, qft'); vizcircuit(extended_circuit)
+qft_net = yao2einsum(extended_circuit; initial_state = input_states, final_state = input_states, optimizer = TreeSA(nslices=2))
+contract(qft_net) # Alternative way to calculate <reg|qft' observable qft|reg>
 ```
+]), columns: 2, gutter: -100pt)
+
+@pan2022solving : Solving the sampling problem of the sycamore quantum circuits
+
 
 == Tensor network, a natural modeling of many-body systems
 
@@ -243,7 +260,11 @@ julia> using Yao
     line(a, b, mark: (end: "straight"))
   }
   content((12, -3), box([*Tensors*\ p(A)\ p(S)\ p(T|A)\ p(L|S)\ p(B|S)\ p(E|T,L)\ p(X|B)\ p(D|E,X)], stroke: blue, inset: 10pt))
-}))
+})) 
+
+Marginal probability:
+
+$p(L) = sum_(A, S, T, B, E, X, D) p(A) p(S) p(T|A) p(L|S) p(B|S) p(E|T,L) p(X|B) p(D|E,X)$
 
 == Inference in probabilistic graphical models
 
@@ -304,8 +325,8 @@ JunctionTree method, dynamic programming et al.
 #grid([#image("images/configs.png", width: 80%)
 @Liu2023
 ],
-[#box(inset: 10pt, stroke: blue.lighten(70%), radius:4pt,
-text(12pt)[
+[
+  #codebox([
 ```julia
 julia> using GenericTensorNetworks, Graphs
 
@@ -323,8 +344,7 @@ julia> solve(net, ConfigsMax())  # enumerating MISs
 0-dimensional Array{CountingTropical{Float64, ConfigEnumerator{10, 1, 1}}, 0}:
 (4.0, {1010000011, 1001001100, 0101010001, 0100100110, 0010111000})ₜ
 ```
-])
-
+])\
 #text(14pt)[Source code available on GitHub: #link("https://github.com/QuEraComputing/GenericTensorNetworks.jl")[GenericTensorNetworks.jl]]
 ], columns: 2)
 
