@@ -225,25 +225,69 @@ Tree width (measures how similar a graph is to a tree):
 - $L times L$ grid graph: $O(L)$
 - $n$-vertex 3-regular graph: $approx n/6$
 
+== Heuristic search for optimal contraction order
+
+Can handle $>10^4$ tensors!
+
+- `GreedyMethod`: fast but not optimal
+- `ExactTreewidth`: optimal but exponential time
+- `TreeSA`: heuristic local search, close to optimal, **slicing** supported
+- `KaHyParBipartite` and `SABipartite`: min-cut based bipartition, better heuristic for extremely large tensor networks
+
+
+Check the blog post for more details: https://arrogantgao.github.io/blogs/contractionorder/
+
+#codebox([
+```julia
+using OMEinsum
+code_inner_product = ein"aj,jbk,kcl,ldm,me,an,nbo,ocp,pdq,qe->"
+tensors_inner = [tensors..., conj.(tensors)...]
+size_dict_inner = OMEinsum.get_size_dict(getixsv(code_inner_product), tensors_inner)
+contraction_complexity(code_inner_product, size_dict_inner)
+optcode = optimize_code(code_inner_product, size_dict_inner, TreeSA())
+contraction_complexity(optcode, size_dict_inner)
+```
+])
+
+
 == Quantum circuit simulation
 
-TODO: show yao, and code.
-
-#image("images/2024-10-29-20-52-30.png", width: 100pt)
-
 #grid([
-  #image("images/2024-10-29-17-01-04.png", width: 400pt)
+#image("images/2024-10-29-20-52-30.png", width: 100pt),
+#image("images/2024-10-29-17-01-04.png", width: 400pt)
 ], codebox([
 ```julia
 using Yao
-qft = EasyBuild.qft_circuit(4);
+
+# create a QFT circuit
+qft = EasyBuild.qft_circuit(4)
+
+# create an observable
 observable = chain(4, [put(4, i=>X) for i in 1:4]);
+
+# create input states
 input_states = Dict([i=>zero_state(1) for i in 1:4])
-extended_circuit = chain(qft, observable, qft'); vizcircuit(extended_circuit)
-qft_net = yao2einsum(extended_circuit; initial_state = input_states, final_state = input_states, optimizer = TreeSA(nslices=2))
-contract(qft_net) # Alternative way to calculate <reg|qft' observable qft|reg>
 ```
 ]), columns: 2, gutter: -100pt)
+
+== Tensor network based quantum circuit simulation
+
+#grid([
+],
+[
+#codebox([
+```julia
+extended_circuit = chain(qft, observable, qft')
+
+qft_net = yao2einsum(extended_circuit;
+    initial_state = input_states,
+    final_state = input_states,
+    optimizer = TreeSA(nslices=2)
+)
+contract(qft_net) # calculate <reg|qft' observable qft|reg>
+```
+])
+], columns: 2, gutter: 20pt)
 
 @pan2022solving : Solving the sampling problem of the sycamore quantum circuits
 
@@ -495,16 +539,10 @@ GenericTensorNetworks.jl
 
 == Thank you!
 
-#grid(text(14pt)[
+#grid(text(18pt)[
 #text(fill:blue, "jinguoliu@hkust-gz.edu.cn")
 ], [],
 columns:2, gutter: 40pt)
-
-== Interesting links
-- Generic tensor networks: https://queracomputing.github.io/GenericTensorNetworks.jl/dev/
-- Problem reductions: https://giggleliu.github.io/ProblemReductions.jl/dev/generated/Ising/
-- Integer sequencing: https://oeis.org/A006506
-- Contraction order: https://arrogantgao.github.io/blogs/contractionorder/
 
 ==
 

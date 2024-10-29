@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.1
+# v0.20.0
 
 #> [frontmatter]
 
@@ -213,6 +213,9 @@ md"Given the contraction order and bond dimensions, ne can use `optimize_code` t
 
 # ╔═╡ f80aa1e7-1a92-4a52-a070-d382fa36dcb3
 optcode = optimize_code(code_inner_product, size_dict_inner, TreeSA())
+
+# ╔═╡ 1cbf610c-2a91-4b4b-baa3-baa15848ca7b
+md"TODO: Bug fix"
 
 # ╔═╡ 2656103c-fe7f-4a76-9f89-57aadc892824
 # ╠═╡ show_logs = false
@@ -439,7 +442,12 @@ end
 mat(control(2, 1, 2=>shift(Basic(:π)/2)))
 
 # ╔═╡ cb012a72-f5d8-41b7-9146-0cb184269801
+# reshape(ein"ij->ijij"([1 1; 1 exp(im * pi / 2)]), 4, 4)
 reshape(ein"ij->ijij"([1 1; 1 exp(im*Basic(:π)/2)]), 4, 4)
+# ein"ij->ijij"([1 1; 1 exp(im*π/2)])
+
+# ╔═╡ 8f7d7e0f-1fe1-4ac6-b0a3-4225368a8518
+md"TODO: Replaced `exp(im*Basic(:π)/2)` (which was not functioning) with `exp(im * pi / 2)`. Plz verify if this aligns with the intended expression."
 
 # ╔═╡ d2833db0-7f86-493b-b96e-8747f782f129
 md"## Convert a circuit to a tensor network"
@@ -926,7 +934,7 @@ log_probability(mmap, [1, 0]), log_probability(mmap, [0, 0])
 # ╠═cdf5ffd0-28a8-4a53-81b4-19037bb3e7cb
 # ╟─344020d5-88b3-45db-8641-5ae1f690871f
 # ╠═c4eac832-3629-41bf-8dc9-5b2a6d3d914b
-# ╠═c1e2fcdb-c12f-4743-ab7e-c0d2feb5ab2f
+# ╟─c1e2fcdb-c12f-4743-ab7e-c0d2feb5ab2f
 # ╠═3c84890c-0371-44cb-a9c7-ae76adeb0307
 # ╟─98cafa86-1fa5-43b9-b479-3f0893fecbb8
 # ╟─a40cbf4b-4f5d-443c-8463-b4e9b5e6edcd
@@ -936,6 +944,7 @@ log_probability(mmap, [1, 0]), log_probability(mmap, [0, 0])
 # ╠═b176805b-ef1f-4cec-922a-f653ace76ce4
 # ╟─e564c83b-2b20-4c1a-87a4-1abc3c504c0c
 # ╠═f80aa1e7-1a92-4a52-a070-d382fa36dcb3
+# ╟─1cbf610c-2a91-4b4b-baa3-baa15848ca7b
 # ╠═2656103c-fe7f-4a76-9f89-57aadc892824
 # ╠═05171dfb-a005-448d-856a-4f1d417451b0
 # ╠═750ab594-9990-4ad1-a8c8-e66ea058909d
@@ -970,6 +979,7 @@ log_probability(mmap, [1, 0]), log_probability(mmap, [0, 0])
 # ╟─6173ea8a-a9e7-40e8-badb-601f8e96bd7d
 # ╠═f4e57c8d-57d3-4ee1-9cfe-06bfac8ac87f
 # ╠═cb012a72-f5d8-41b7-9146-0cb184269801
+# ╟─8f7d7e0f-1fe1-4ac6-b0a3-4225368a8518
 # ╟─d2833db0-7f86-493b-b96e-8747f782f129
 # ╟─29a41d88-7531-4914-866f-bc4185bde8c2
 # ╟─ae35e03a-0da9-496f-b942-ff312fb2b366
