@@ -249,8 +249,11 @@ contraction_complexity(optcode, size_dict_inner)
 ```
 ])
 
+= Applications
 
-== Quantum circuit simulation
+== Tensor network for quantum circuit simulation
+
+Yao is a efficient variational quantum circuit framework in Julia Language.
 
 #grid([
 #image("images/2024-10-29-20-52-30.png", width: 100pt),
@@ -292,7 +295,7 @@ contract(qft_net) # calculate <reg|qft' observable qft|reg>
 @pan2022solving : Solving the sampling problem of the sycamore quantum circuits
 
 
-== Tensor network, a natural modeling of many-body systems
+== Tensor network for probabilistic inference
 
 #align(center, canvas({
   import draw: *
@@ -352,7 +355,7 @@ logp, cfg = most_probable_config(inference_tn2)
 
 JunctionTree method, dynamic programming et al.
 
-== Solving any problem in NP-complete can be ground breaking
+== Tensor network for combinatorial optimization
 
 #canvas({
   import draw: *
@@ -428,9 +431,6 @@ julia> solve(net, ConfigsMax())  # enumerating MISs
 #text(14pt)[Source code available on GitHub: #link("https://github.com/QuEraComputing/GenericTensorNetworks.jl")[GenericTensorNetworks.jl]]
 ], columns: 2)
 
-= Reducting computational hard problems to tensor networks
-
-= Solution space properties
 == Property extraction
 #align(center, canvas({
   import draw: *
@@ -468,19 +468,6 @@ julia> solve(net, ConfigsMax())  # enumerating MISs
 //   show-graph(locs, edges)
 //   content((2, -5), [3-regular graph])
 // }))
-
-== Other computational hard problems
-
-#grid(align(center)[
-#image("images/problems.png", width:150pt)
-Constraint satisfaction problems
-],
-[
-#image("images/barcode.png", width:200pt)
-
-GenericTensorNetworks.jl
-
-], columns: 2, gutter: 200pt)
 
 = Plans
 
@@ -539,10 +526,20 @@ GenericTensorNetworks.jl
 
 == Thank you!
 
-#grid(text(18pt)[
-#text(fill:blue, "jinguoliu@hkust-gz.edu.cn")
-], [],
-columns:2, gutter: 40pt)
+#align(center, grid(box(width: 200pt)[#image("images/OMEinsum.png", width:150pt)
+OMEinsum.jl],
+box(width: 200pt)[#image("images/GenericTensorNetworks.png", width:150pt)
+GenericTensorNetworks.jl
+],
+box(width: 200pt)[#image("images/TensorInference.png", width:150pt)
+TensorInference.jl
+],
+box(width: 200pt)[#image("images/Yao.png", width:150pt)
+Yao.jl
+],
+columns: 4, gutter: 10pt))
+
+#align(bottom+right, text(fill:blue, "jinguoliu@hkust-gz.edu.cn"))
 
 ==
 
