@@ -233,7 +233,7 @@ TODO: show yao, and code.
   #image("images/2024-10-29-17-01-04.png", width: 400pt)
 ], codebox([
 ```julia
-julia> using Yao
+using Yao
 qft = EasyBuild.qft_circuit(4);
 observable = chain(4, [put(4, i=>X) for i in 1:4]);
 input_states = Dict([i=>zero_state(1) for i in 1:4])
@@ -268,7 +268,41 @@ $p(L) = sum_(A, S, T, B, E, X, D) p(A) p(S) p(T|A) p(L|S) p(B|S) p(E|T,L) p(X|B)
 
 == Inference in probabilistic graphical models
 
-TODO: show code.
+
+Solutions to the most common probabilistic inference tasks, including:
+- *Probability of evidence* (PR): Calculates the total probability of the observed evidence across all possible states of the unobserved variables
+- *Marginal inference* (MAR): Computes the probability distribution of a subset of variables, ignoring the states of all other variables
+- *Maximum a Posteriori Probability estimation* (MAP): Finds the most probable state of a subset of unobserved variables given some observed evidence
+- *Marginal Maximum a Posteriori* (MMAP): Finds the most probable state of a subset of variables, averaging out the uncertainty over the remaining ones
+
+
+#codebox([
+```julia
+using TensorInference
+
+model = read_model_file(pkgdir(TensorInference, "examples", "asia-network", "model.uai"))
+
+# Create a tensor network representation of the loaded model.
+inference_tn = TensorNetworkModel(model)
+
+# Retrieve all the variables in the model.
+get_vars(inference_tn)
+
+# Calculate the partition function
+probability(inference_tn) |> first
+
+# Calculate the marginal probabilities of each random variable in the model.
+marginals(inference_tn)
+
+inference_tn2 = TensorNetworkModel(model, evidence = Dict(7 => 0))
+
+maximum_logp(inference_tn2)
+
+sample(inference_tn2, 10)
+
+logp, cfg = most_probable_config(inference_tn2)
+```
+])
 
 JunctionTree method, dynamic programming et al.
 
