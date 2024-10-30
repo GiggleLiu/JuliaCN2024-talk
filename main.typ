@@ -19,8 +19,8 @@
 // Global information configuration
 #let s = (s.methods.info)(
   self: s,
-  title: [#grid(image("images/redbird.png", width:20pt), [Computing solution space properties of combinatorial optimization problems via generic tensor networks])],
-  subtitle: [(CompQMB2024)],
+  title: [#grid(image("images/redbird.png", width:20pt), [Large scale tensor network contraction in Julia])],
+  subtitle: [(CCF 中国开源大会 2024)],
   author: [Jin-Guo Liu],
   date: datetime.today(),
   institution: [HKUST(GZ) - FUNH - Advanced Materials Thrust],
@@ -47,7 +47,7 @@
   content(loc, [$#label$], align: center, fill:white, frame:"rect", padding:0.12, stroke: none, name: label)
 }
 #let codebox(txt, width: auto) = {
-  box(inset: 10pt, stroke: blue.lighten(70%), radius:4pt, fill: blue.transparentize(90%), text(12pt, txt), width: width)
+  box(inset: 10pt, stroke: blue.lighten(70%), radius:4pt, fill: blue.transparentize(90%), text(14pt, txt), width: width)
 }
 
 #let demo() = {
@@ -82,25 +82,6 @@
 }
 
 = Large scale tensor contraction in Julia
-== Julia ecosystem for tensor network contraction
-
-#canvas({
-  import draw: *
-  for (x, y, text, name) in ((-10, -4, [OMEinsum \ GSoC 2019], "OMEinsum"), (0, -1, [YaoToEinsum\ @Luo2020], "YaoToEinsum"), (0, -4, [GenericTensorNetwork\ @Liu2023], "GenericTensorNetwork"), (0, -7, [TensorInference\ @Roa2024], "TensorInference")) {
-    content((x, y), align(center, box(text, stroke:black, inset:10pt, width: 220pt)), name: name)
-  }
-  line("OMEinsum.east", "YaoToEinsum.west", mark: (end: "straight"))
-  line("OMEinsum.east", "GenericTensorNetwork.west", mark: (end: "straight"))
-  line("OMEinsum.east", "TensorInference.west", mark: (end: "straight"))
-  content((8, -1), align(left, [#box([Quantum circuit simulation], width: 200pt)]))
-  content((8, -4), align(left, [#box([Combinatorial optimization], width: 200pt)]))
-  content((8, -7), align(left, [#box([Probabilistic inference], width: 200pt)]))
-  content((-10, -6), align(left, [#box([Tensor network contraction engine], width: 200pt)]))
-})
-
-#align(bottom+right, [Note: GSoC: Google Summer of Code])
-
-
 == Vector, matrix and tensor
 #v(100pt)
 #align(top+center, grid([*Vector:*], [`v[i]` $arrow.r$ ], [
@@ -196,26 +177,22 @@
   line((0, -2), (18, -2), mark : (end: "straight"))
   demo()
   hobby((3, 2), (4, 2), (5, 0), (2, 0), close: true, fill: blue.transparentize(70%), stroke:none)
-  content((3, -1.5), [Rank = 2])
   set-origin((7, 0))
   demo()
   hobby((1, -1), (2.5, 2), (3, 2.5), (4, 2.5), (5, 0), (2, -1), close: true, fill: blue.transparentize(70%), stroke:none)
-  content((3, -1.5), [Rank = 2])
   set-origin((7, 0))
   demo()
   hobby((-1, 3), (1, 4), (2, 4), (1, 2), (0, 1), close: true, fill: blue.transparentize(70%), stroke:none)
-  content((3, -1.5), [Rank = 2])
-  content((3.8, 3.7), [Rank = 2])
   hobby((1, -1), (2.5, 2), (3, 2.5), (4, 2.5), (5, 0), (2, -1), close: true, fill: blue.transparentize(70%), stroke:none)
   set-origin((7, 0))
   content((0, -1.5), [$dots$])
 }), center)
-- Maximum tensor rank: 2
-- Maximum computational cost $O(2^3)$ (< brute force cost $O(2^5)$), where $2$ is the dimension of the variables.
+
+- Constraction is performed in pair-wise manner.
+- The pair-wise contraction order determines the complexity (time, space, read-write).
 
 
-
-== The hardness of tensor network contraction
+== The hardness of finding optimal contraction order
 #align(center, box(inset: 10pt, stroke: blue)[*NP-complete*])
 
 *Theorem @Markov2008*: Let $C$ be a quantum circuit (tensor network) with $T$ gates (tensors) and whose underlying circuit graph is $G_C$. Then $C$ can be simulated deterministically in time $T^(O(1)) exp[O(text("tw")(G_C))]$.
@@ -224,6 +201,25 @@ Tree width (measures how similar a graph is to a tree):
 - Tree graphs and line graphs: $O(1)$
 - $L times L$ grid graph: $O(L)$
 - $n$-vertex 3-regular graph: $approx n/6$
+
+== Julia ecosystem for tensor network contraction
+
+#canvas({
+  import draw: *
+  for (x, y, text, name) in ((-10, -4, [OMEinsum \ GSoC 2019], "OMEinsum"), (0, -1, [YaoToEinsum\ @Luo2020], "YaoToEinsum"), (0, -4, [GenericTensorNetwork\ @Liu2023], "GenericTensorNetwork"), (0, -7, [TensorInference\ @Roa2024], "TensorInference")) {
+    content((x, y), align(center, box(text, stroke:black, inset:10pt, width: 220pt)), name: name)
+  }
+  line("OMEinsum.east", "YaoToEinsum.west", mark: (end: "straight"))
+  line("OMEinsum.east", "GenericTensorNetwork.west", mark: (end: "straight"))
+  line("OMEinsum.east", "TensorInference.west", mark: (end: "straight"))
+  content((8, -1), align(left, [#box([Quantum circuit simulation], width: 200pt)]))
+  content((8, -4), align(left, [#box([Combinatorial optimization], width: 200pt)]))
+  content((8, -7), align(left, [#box([Probabilistic inference], width: 200pt)]))
+  content((-10, -6), align(left, [#box([Tensor network contraction engine], width: 200pt)]))
+})
+
+#align(bottom+right, [Note: GSoC: Google Summer of Code])
+
 
 == Heuristic search for optimal contraction order
 
@@ -237,15 +233,90 @@ Can handle $>10^4$ tensors!
 
 Check the blog post for more details: https://arrogantgao.github.io/blogs/contractionorder/
 
-#codebox([
+== Example
+
+Step 1: Prepare the input tensors and the contraction code.
+#align(center, canvas({
+  import draw: *
+  demo()
+  content("A", [A])
+  content("B", [B])
+  content("C", [C])
+  content("D", [D])
+  content("E", [E])
+  content("F", [F])
+}))
+
+#codebox(width: 100%, [
 ```julia
-using OMEinsum
-code_inner_product = ein"aj,jbk,kcl,ldm,me,an,nbo,ocp,pdq,qe->"
-tensors_inner = [tensors..., conj.(tensors)...]
-size_dict_inner = OMEinsum.get_size_dict(getixsv(code_inner_product), tensors_inner)
-contraction_complexity(code_inner_product, size_dict_inner)
-optcode = optimize_code(code_inner_product, size_dict_inner, TreeSA())
-contraction_complexity(optcode, size_dict_inner)
+julia> using OMEinsum  # import OMEinsum
+
+julia> tensors = [randn(20, 20) for _ in 1:6]  # A, B, C, D, E, F
+6-element Vector{Matrix{Float64}}:
+...
+
+julia> code = ein"ab,ad,ac,cd,bc,de->"  # ein"..." is a string literal that returns an EinCode object
+ab, ad, ac, cd, bc, de -> 
+```
+])
+
+== Example
+
+Step 3: Get the size of each index
+
+#codebox(width: 100%, [
+```julia
+julia> size_dict = OMEinsum.get_size_dict(getixsv(code), tensors)  # size of each index
+Dict{Char, Int64} with 5 entries:
+  'a' => 20
+  'd' => 20
+  'c' => 20
+  'e' => 20
+  'b' => 20
+
+julia> contraction_complexity(code, size_dict)  # complexity of the contraction
+Time complexity: 2^17.28771237954945
+Space complexity: 2^0.0
+Read-write complexity: 2^11.229419688230417
+```
+])
+
+== Example
+
+Step 4: Optimize the contraction order
+
+#codebox(width: 100%, [
+```julia
+julia> optcode = optimize_code(code, size_dict, TreeSA())  # using TreeSA optimizer
+SlicedEinsum{Char, DynamicNestedEinsum{Char}}(Char[], de, d -> 
+├─ de
+└─ dc, cd -> d
+   ├─ ad, ac -> dc
+   │  ├─ ad
+   │  └─ ac, ca -> ac
+   │     ├─ ac
+   │     └─ bc, ab -> ca
+   │        ├─ bc
+   │        └─ ab
+   └─ cd
+)
+```
+])
+
+== Example
+
+Step 5: Calculate the result
+
+#codebox(width: 100%, [
+```julia
+julia> contraction_complexity(optcode, size_dict)
+Time complexity: 2^14.037890085142509
+Space complexity: 2^8.643856189774725
+Read-write complexity: 2^12.241089378860856
+
+julia> optcode(tensors...)  # code is callable, `...` splats the tensors
+0-dimensional Array{Float64, 0}:
+-569.622669025289
 ```
 ])
 
@@ -253,11 +324,10 @@ contraction_complexity(optcode, size_dict_inner)
 
 == Tensor network for quantum circuit simulation
 
-Yao is a efficient variational quantum circuit framework in Julia Language.
+With Yao quantum simulator, we can easily define quantum circuits and observables.
 
 #grid([
-#image("images/2024-10-29-20-52-30.png", width: 100pt),
-#image("images/2024-10-29-17-01-04.png", width: 400pt)
+#image("images/2024-10-29-17-01-04.png", width: 500pt)
 ], codebox([
 ```julia
 using Yao
@@ -271,21 +341,26 @@ observable = chain(4, [put(4, i=>X) for i in 1:4]);
 # create input states
 input_states = Dict([i=>zero_state(1) for i in 1:4])
 ```
-]), columns: 2, gutter: -100pt)
+]), columns: 2, gutter: -130pt)
+
+#align(bottom+right, align(horizon)[#grid([Note: ], [#image("images/2024-10-29-20-52-30.png", width: 30pt)], [is a high-performance variational quantum circuit simulator for human.], columns: 3, gutter: 5pt)])
+
 
 == Tensor network based quantum circuit simulation
 
 #grid([
 ],
 [
-#codebox([
+#codebox(width: 100%, [
 ```julia
+# represent sandwiched circuits to represent expectation value
 extended_circuit = chain(qft, observable, qft')
 
+# call the magic function `yao2einsum`
 qft_net = yao2einsum(extended_circuit;
     initial_state = input_states,
     final_state = input_states,
-    optimizer = TreeSA(nslices=2)
+    optimizer = TreeSA(nslices=2)  # using TreeSA optimizer with 2 slices
 )
 contract(qft_net) # calculate <reg|qft' observable qft|reg>
 ```
