@@ -202,33 +202,16 @@ Tree width (measures how similar a graph is to a tree):
 - $L times L$ grid graph: $O(L)$
 - $n$-vertex 3-regular graph: $approx n/6$
 
-== Julia ecosystem for tensor network contraction
-
-#canvas({
-  import draw: *
-  for (x, y, text, name) in ((-10, -4, [OMEinsum \ GSoC 2019], "OMEinsum"), (0, -1, [YaoToEinsum\ @Luo2020], "YaoToEinsum"), (0, -4, [GenericTensorNetwork\ @Liu2023], "GenericTensorNetwork"), (0, -7, [TensorInference\ @Roa2024], "TensorInference")) {
-    content((x, y), align(center, box(text, stroke:black, inset:10pt, width: 220pt)), name: name)
-  }
-  line("OMEinsum.east", "YaoToEinsum.west", mark: (end: "straight"))
-  line("OMEinsum.east", "GenericTensorNetwork.west", mark: (end: "straight"))
-  line("OMEinsum.east", "TensorInference.west", mark: (end: "straight"))
-  content((8, -1), align(left, [#box([Quantum circuit simulation], width: 200pt)]))
-  content((8, -4), align(left, [#box([Combinatorial optimization], width: 200pt)]))
-  content((8, -7), align(left, [#box([Probabilistic inference], width: 200pt)]))
-  content((-10, -6), align(left, [#box([Tensor network contraction engine], width: 200pt)]))
-})
-
-#align(bottom+right, [Note: GSoC: Google Summer of Code])
-
-
 == Heuristic search for optimal contraction order
+
+#align(center, box(grid(image("images/2024-10-31-07-23-59.png", width: 100pt), [`OMEinsum.jl`], columns: 2, gutter: 20pt), inset: 10pt, stroke: blue))
 
 Can handle $>10^4$ tensors!
 
 - `GreedyMethod`: fast but not optimal
-- `ExactTreewidth`: optimal but exponential time
-- `TreeSA`: heuristic local search, close to optimal, **slicing** supported
-- `KaHyParBipartite` and `SABipartite`: min-cut based bipartition, better heuristic for extremely large tensor networks
+- `ExactTreewidth`: optimal but exponential time @Bouchitté2001
+- `TreeSA`: heuristic local search, close to optimal, **slicing** supported @Kalachev2022
+- `KaHyParBipartite` and `SABipartite`: min-cut based bipartition, better heuristic for extremely large tensor networks @Gray2021
 
 
 Check the blog post for more details: https://arrogantgao.github.io/blogs/contractionorder/
@@ -320,7 +303,25 @@ julia> optcode(tensors...)  # code is callable, `...` splats the tensors
 ```
 ])
 
-= Applications
+== Julia ecosystem for tensor network contraction
+
+#canvas({
+  import draw: *
+  for (x, y, text, name) in ((-10, -4, [OMEinsum \ GSoC 2019], "OMEinsum"), (0, -1, [YaoToEinsum\ @Luo2020], "YaoToEinsum"), (0, -4, [GenericTensorNetwork\ @Liu2023], "GenericTensorNetwork"), (0, -7, [TensorInference\ @Roa2024], "TensorInference")) {
+    content((x, y), align(center, box(text, stroke:black, inset:10pt, width: 220pt)), name: name)
+  }
+  line("OMEinsum.east", "YaoToEinsum.west", mark: (end: "straight"))
+  line("OMEinsum.east", "GenericTensorNetwork.west", mark: (end: "straight"))
+  line("OMEinsum.east", "TensorInference.west", mark: (end: "straight"))
+  content((8, -1), align(left, [#box([Quantum circuit simulation], width: 200pt)]))
+  content((8, -4), align(left, [#box([Combinatorial optimization], width: 200pt)]))
+  content((8, -7), align(left, [#box([Probabilistic inference], width: 200pt)]))
+  content((-10, -6), align(left, [#box([Tensor network contraction engine], width: 200pt)]))
+})
+
+#align(bottom+right, [Note: GSoC: Google Summer of Code])
+
+= Application 1: Quantum simulation
 
 == Tensor network for quantum circuit simulation
 
@@ -330,47 +331,77 @@ With Yao quantum simulator, we can easily define quantum circuits and observable
 #image("images/2024-10-29-17-01-04.png", width: 500pt)
 ], codebox([
 ```julia
-using Yao
+julia> using Yao
 
 # create a QFT circuit
-qft = EasyBuild.qft_circuit(4)
-
-# create an observable
-observable = chain(4, [put(4, i=>X) for i in 1:4]);
-
-# create input states
-input_states = Dict([i=>zero_state(1) for i in 1:4])
+julia> qft = EasyBuild.qft_circuit(4);
 ```
-]), columns: 2, gutter: -130pt)
+], width: 100%), columns: 2, gutter: 20pt)
 
+#v(100pt)
 #align(bottom+right, align(horizon)[#grid([Note: ], [#image("images/2024-10-29-20-52-30.png", width: 30pt)], [is a high-performance variational quantum circuit simulator for human.], columns: 3, gutter: 5pt)])
 
+== Create an observable
 
-== Tensor network based quantum circuit simulation
+#codebox([
+```julia
+# create an observable
+julia> observable = chain(4, [put(4, i=>X) for i in 1:4])
+nqubits: 4
+chain
+├─ put on (1)
+│  └─ X
+├─ put on (2)
+│  └─ X
+├─ put on (3)
+│  └─ X
+└─ put on (4)
+   └─ X
+
+# create input states |0000>
+julia> input_states = Dict([i=>zero_state(1) for i in 1:4])
+Dict{Int64, ArrayReg{2, ComplexF64, Matrix{ComplexF64}}} with 4 entries:
+  4 => ArrayReg{2, ComplexF64, Array...}…
+  2 => ArrayReg{2, ComplexF64, Array...}…
+  3 => ArrayReg{2, ComplexF64, Array...}…
+  1 => ArrayReg{2, ComplexF64, Array...}…
+```
+], width: 100%)
+
+
+
+== Tensor network based simulation
 
 #grid([
 ],
 [
 #codebox(width: 100%, [
 ```julia
-# represent sandwiched circuits to represent expectation value
-extended_circuit = chain(qft, observable, qft')
+# represent sandwiched circuits to represent expectation value: qft - observable - qft'
+julia> extended_circuit = chain(qft, observable, qft');
 
 # call the magic function `yao2einsum`
-qft_net = yao2einsum(extended_circuit;
+julia> qft_net = yao2einsum(extended_circuit;
     initial_state = input_states,
     final_state = input_states,
     optimizer = TreeSA(nslices=2)  # using TreeSA optimizer with 2 slices
 )
-contract(qft_net) # calculate <reg|qft' observable qft|reg>
+TensorNetwork
+Time complexity: 2^9.10852445677817
+Space complexity: 2^2.0
+Read-write complexity: 2^10.199672344836365
+
+julia> contract(qft_net) # calculate <reg|qft' observable qft|reg>
+0-dimensional Array{ComplexF64, 0}:
+0.9999999999999993 + 0.0im
 ```
 ])
 ], columns: 2, gutter: 20pt)
 
-@pan2022solving : Solving the sampling problem of the sycamore quantum circuits
+@pan2022solving : Solving the sampling problem of the sycamore quantum circuits (53 qubits)
 
 
-== Tensor network for probabilistic inference
+= Application 2: Probabilistic inference
 
 #align(center, canvas({
   import draw: *
@@ -390,7 +421,7 @@ Marginal probability:
 
 $p(L) = sum_(A, S, T, B, E, X, D) p(A) p(S) p(T|A) p(L|S) p(B|S) p(E|T,L) p(X|B) p(D|E,X)$
 
-== Inference in probabilistic graphical models
+== Exact inference in probabilistic graphical models
 
 
 Solutions to the most common probabilistic inference tasks, including:
@@ -399,38 +430,88 @@ Solutions to the most common probabilistic inference tasks, including:
 - *Maximum a Posteriori Probability estimation* (MAP): Finds the most probable state of a subset of unobserved variables given some observed evidence
 - *Marginal Maximum a Posteriori* (MMAP): Finds the most probable state of a subset of variables, averaging out the uncertainty over the remaining ones
 
+Traditional methods: Junction Tree method, dynamic programming et al.
 
+== Load a probabilistic graphical model
 #codebox([
 ```julia
 using TensorInference
 
 model = read_model_file(pkgdir(TensorInference, "examples", "asia-network", "model.uai"))
+UAIModel(nvars = 8, nfactors = 8)
+ cards : [2, 2, 2, 2, 2, 2, 2, 2]
+ factors : 
+  Factor(1), size = (2,)
+  Factor(1, 2), size = (2, 2)
+  Factor(3), size = (2,)
+  Factor(3, 4), size = (2, 2)
+  Factor(3, 5), size = (2, 2)
+  Factor(2, 4, 6), size = (2, 2, 2)
+  Factor(6, 7), size = (2, 2)
+  Factor(5, 6, 8), size = (2, 2, 2)
+```
+], width: 100%)
 
+== Create a tensor network representation
+
+#codebox([
+```julia
 # Create a tensor network representation of the loaded model.
-inference_tn = TensorNetworkModel(model)
-
-# Retrieve all the variables in the model.
-get_vars(inference_tn)
+julia> inference_tn = TensorNetworkModel(model, evidence = Dict(7 => 0), optimizer=TreeSA())
+TensorNetworkModel{Int64, OMEinsum.SlicedEinsum{Int64, OMEinsum.DynamicNestedEinsum{Int64}}, Array{Float64}}
+variables: 1, 2, 3, 4, 5, 6, 7 (evidence → 0), 8
+contraction time = 2^6.0, space = 2^2.0, read-write = 2^7.066
 
 # Calculate the partition function
-probability(inference_tn) |> first
+julia> probability(inference_tn)
+exp(-2.2046416559839406) * fill(1.0)
+```
+], width: 100%)
 
+== Calculate the marginal probabilities
+#codebox([
+```julia
 # Calculate the marginal probabilities of each random variable in the model.
-marginals(inference_tn)
+julia> marginals(inference_tn)
+Dict{Vector{Int64}, Vector{Float64}} with 8 entries:
+  [8] => [0.640766, 0.359234]
+  [3] => [0.687754, 0.312246]
+  [1] => [0.0131555, 0.986844]
+  [5] => [0.506326, 0.493674]
+  [4] => [0.488711, 0.511289]
+  [6] => [0.57604, 0.42396]
+  [7] => [1.0]
+  [2] => [0.0924109, 0.907589]
+```
+], width: 100%)
 
-inference_tn2 = TensorNetworkModel(model, evidence = Dict(7 => 0))
+== Calculate the maximum a posteriori probability
+#codebox([
+```julia
+julia> logp, cfg = most_probable_config(inference_tn)
+(-3.65222179200233, [1, 1, 0, 0, 0, 0, 0, 0])
+```
+], width: 100%)
 
-maximum_logp(inference_tn2)
-
-sample(inference_tn2, 10)
-
-logp, cfg = most_probable_config(inference_tn2)
+== Sample from the model
+#codebox([
+```julia
+julia> sample(inference_tn, 10)
+10-element TensorInference.Samples{Int64}:
+ [1, 1, 0, 1, 1, 1, 0, 1]
+ [1, 1, 0, 0, 1, 0, 0, 0]
+ [1, 1, 0, 0, 0, 0, 0, 0]
+ [1, 1, 0, 0, 0, 0, 0, 0]
+ ⋮
+ [1, 1, 0, 0, 0, 0, 0, 1]
+ [1, 1, 0, 0, 1, 0, 0, 0]
+ [1, 1, 0, 0, 1, 0, 0, 1]
+ [1, 1, 0, 1, 1, 1, 0, 1]
 ```
 ])
 
-JunctionTree method, dynamic programming et al.
 
-== Tensor network for combinatorial optimization
+= Application 3: Combinatorial optimization
 
 #canvas({
   import draw: *
@@ -543,8 +624,6 @@ julia> solve(net, ConfigsMax())  # enumerating MISs
 //   show-graph(locs, edges)
 //   content((2, -5), [3-regular graph])
 // }))
-
-= Plans
 
 == A unified framework for problem reductions
 
