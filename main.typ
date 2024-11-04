@@ -7,6 +7,12 @@
 #import "@preview/pinit:0.1.3": *
 #import "@preview/colorful-boxes:1.2.0": *
 
+#set page(background: context {
+  if (counter(page).get().first() == 1 or counter(page).get().first() == 32) {
+    box(image("images/bg.png", width: 100%, height: 100%), inset: (top: 25pt))
+  }
+})
+
 // #show raw.where(block: true): it=>{
 //   par(justify:false,block(fill:rgb("#f0f0fe"),inset:1.5em,width:99%,text(it)))
 // }
@@ -19,11 +25,11 @@
 // Global information configuration
 #let s = (s.methods.info)(
   self: s,
+  logo: text(white)[#v(-40pt)OpenSCS 工作委员会#v(80pt)],
   title: [Large scale tensor network contraction in Julia],
-  subtitle: [(CCF 中国开源大会 2024)],
-  author: [Jin-Guo Liu],
-  date: datetime.today(),
-  institution: [HKUST(GZ) - FUNH - Advanced Materials Thrust],
+  author: text(white)[Jin-Guo Liu],
+  date: text(white)[#datetime.today().display()],
+  institution: text(white)[HKUST(GZ) - FUNH - Advanced Materials Thrust],
 )
 
 // Extract methods
@@ -82,6 +88,12 @@
 }
 
 = Large scale tensor contraction in Julia
+// #set page(background: box(
+//   width: 100%,
+//   height: 100%,
+//   fill: pattern(image("images/bg.png"))
+// ))
+
 == Vector, matrix and tensor
 #v(100pt)
 #align(top+center, grid([*Vector:*], [`v[i]` $arrow.r$ ], [
@@ -210,7 +222,7 @@ Can handle $>10^4$ tensors!
 
 - `GreedyMethod`: fast but not optimal
 - `ExactTreewidth`: optimal but exponential time @Bouchitté2001
-- `TreeSA`: heuristic local search, close to optimal, **slicing** supported @Kalachev2022
+- `TreeSA`: heuristic local search, close to optimal, *slicing* supported @Kalachev2022
 - `KaHyParBipartite` and `SABipartite`: min-cut based bipartition, better heuristic for extremely large tensor networks @Gray2021
 
 
@@ -610,22 +622,24 @@ julia> solve(net, ConfigsMax(2))  # enumerating MISs
 
 #align(bottom+right, [Note: Package ProblemReductions.jl is sponsored by Open Source Promotion Plan (OSPP) 2024])
 
-== Thank you!
+==
 
-#align(center, grid(box(width: 200pt)[#image("images/OMEinsum.png", width:150pt)
+#v(100pt)
+#align(center, text(size: 24pt, white)[Thank you! \u{1F339}])
+#align(center, text(white, size: 16pt, grid(box(width: 150pt)[#image("images/OMEinsum.png", width:100pt)
 OMEinsum.jl],
-box(width: 200pt)[#image("images/GenericTensorNetworks.png", width:150pt)
+box(width: 150pt)[#image("images/GenericTensorNetworks.png", width:100pt)
 GenericTensorNetworks.jl
 ],
-box(width: 200pt)[#image("images/TensorInference.png", width:150pt)
+box(width: 150pt)[#image("images/TensorInference.png", width:100pt)
 TensorInference.jl
 ],
-box(width: 200pt)[#image("images/Yao.png", width:150pt)
+box(width: 150pt)[#image("images/Yao.png", width:100pt)
 Yao.jl
 ],
-columns: 4, gutter: 10pt))
+columns: 4, gutter: 10pt)))
 
-#align(bottom+right, text(fill:blue, "jinguoliu@hkust-gz.edu.cn"))
+#align(bottom+left, text(fill:white, "jinguoliu@hkust-gz.edu.cn"))
 
 ==
 
