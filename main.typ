@@ -19,7 +19,7 @@
 // Global information configuration
 #let s = (s.methods.info)(
   self: s,
-  title: [#grid(image("images/redbird.png", width:20pt), [Large scale tensor network contraction in Julia])],
+  title: [Large scale tensor network contraction in Julia],
   subtitle: [(CCF 中国开源大会 2024)],
   author: [Jin-Guo Liu],
   date: datetime.today(),
@@ -114,7 +114,7 @@
 })
 ], columns: 3, gutter: 20pt))
 
-== Tensor network contraction is a modern BLAS
+== Tensor network contraction is a sum of products
 *Dot product*
 #align(center, canvas({
   import draw: *
@@ -141,7 +141,7 @@
   content((3, -0.2), [contract $lr((#v(50pt)#h(160pt))) = sum_(j) A_(i j) v_j$])
 }))
 
-#align(bottom+right, [Note: BLAS = Basic Linear Algebra Subprograms])
+#align(bottom+right, box(width: 500pt, align(left, [$"Note: In this talk, " "tensor network" = &"einsum"\ = &"sum-product network"$])))
 
 == Tensor network contraction is a modern BLAS
 *Tensor network contraction*
@@ -204,7 +204,7 @@ Tree width (measures how similar a graph is to a tree):
 
 == Heuristic search for optimal contraction order
 
-#align(center, box(grid(image("images/2024-10-31-07-23-59.png", width: 100pt), [`OMEinsum.jl`], columns: 2, gutter: 20pt), inset: 10pt, stroke: blue))
+#align(center, box(grid(image("images/2024-10-31-07-23-59.png", width: 100pt), [`OMEinsum.jl` (GSoC 2019, 2024)], columns: 2, gutter: 20pt), inset: 10pt, stroke: blue))
 
 Can handle $>10^4$ tensors!
 
@@ -216,7 +216,7 @@ Can handle $>10^4$ tensors!
 
 Check the blog post for more details: https://arrogantgao.github.io/blogs/contractionorder/
 
-== Example
+== Example: Tensor network contraction
 
 Step 1: Prepare the input tensors and the contraction code.
 #align(center, canvas({
@@ -243,7 +243,7 @@ ab, ad, ac, cd, bc, de ->
 ```
 ])
 
-== Example
+== Example: Tensor network contraction
 
 Step 3: Get the size of each index
 
@@ -264,7 +264,7 @@ Read-write complexity: 2^11.229419688230417
 ```
 ])
 
-== Example
+== Example: Tensor network contraction
 
 Step 4: Optimize the contraction order
 
@@ -286,7 +286,7 @@ SlicedEinsum{Char, DynamicNestedEinsum{Char}}(Char[], de, d ->
 ```
 ])
 
-== Example
+== Example: Tensor network contraction
 
 Step 5: Calculate the result
 
@@ -303,11 +303,11 @@ julia> optcode(tensors...)  # code is callable, `...` splats the tensors
 ```
 ])
 
-== Julia ecosystem for tensor network contraction
+== Julia ecosystem based on tensor network contraction
 
 #canvas({
   import draw: *
-  for (x, y, text, name) in ((-10, -4, [OMEinsum \ GSoC 2019], "OMEinsum"), (0, -1, [YaoToEinsum\ @Luo2020], "YaoToEinsum"), (0, -4, [GenericTensorNetwork\ @Liu2023], "GenericTensorNetwork"), (0, -7, [TensorInference\ @Roa2024], "TensorInference")) {
+  for (x, y, text, name) in ((-10, -4, [OMEinsum], "OMEinsum"), (0, -1, [YaoToEinsum\ @Luo2020], "YaoToEinsum"), (0, -4, [GenericTensorNetwork\ @Liu2023], "GenericTensorNetwork"), (0, -7, [TensorInference\ @Roa2024], "TensorInference")) {
     content((x, y), align(center, box(text, stroke:black, inset:10pt, width: 220pt)), name: name)
   }
   line("OMEinsum.east", "YaoToEinsum.west", mark: (end: "straight"))
@@ -325,7 +325,7 @@ julia> optcode(tensors...)  # code is callable, `...` splats the tensors
 
 == Tensor network for quantum circuit simulation
 
-With Yao quantum simulator, we can easily define quantum circuits and observables.
+Step 1. Create a quantum circuit with `Yao`.
 
 #grid([
 #image("images/2024-10-29-17-01-04.png", width: 500pt)
@@ -338,11 +338,13 @@ julia> qft = EasyBuild.qft_circuit(4);
 ```
 ], width: 100%), columns: 2, gutter: 20pt)
 
-#v(100pt)
+
+#v(40pt)
 #align(bottom+right, align(horizon)[#grid([Note: ], [#image("images/2024-10-29-20-52-30.png", width: 30pt)], [is a high-performance variational quantum circuit simulator for human.], columns: 3, gutter: 5pt)])
 
 == Create an observable
 
+Step 2: Create the initial states and observables.
 #codebox([
 ```julia
 # create an observable
@@ -351,10 +353,7 @@ nqubits: 4
 chain
 ├─ put on (1)
 │  └─ X
-├─ put on (2)
-│  └─ X
-├─ put on (3)
-│  └─ X
+...
 └─ put on (4)
    └─ X
 
@@ -372,9 +371,7 @@ Dict{Int64, ArrayReg{2, ComplexF64, Matrix{ComplexF64}}} with 4 entries:
 
 == Tensor network based simulation
 
-#grid([
-],
-[
+Step 3: Convert to a tensor network with `yao2einsum`.
 #codebox(width: 100%, [
 ```julia
 # represent sandwiched circuits to represent expectation value: qft - observable - qft'
@@ -396,9 +393,15 @@ julia> contract(qft_net) # calculate <reg|qft' observable qft|reg>
 0.9999999999999993 + 0.0im
 ```
 ])
-], columns: 2, gutter: 20pt)
 
-@pan2022solving : Solving the sampling problem of the sycamore quantum circuits (53 qubits)
+== Pros and cons
+
+- Suited for *shallow* quantum circuit simulation, e.g. solving the sampling problem of the sycamore quantum circuits (53 qubits) @pan2022solving
+- Can handle common tasks, such as *sampling* and *obtaining expectation values*.
+- Can easily generalize the noisy quantum systems @Gao2024.
+
+#v(50pt)
+- For general circuits, the simulation is still exponentially hard.
 
 
 = Application 2: Probabilistic inference
@@ -430,14 +433,15 @@ Solutions to the most common probabilistic inference tasks, including:
 - *Maximum a Posteriori Probability estimation* (MAP): Finds the most probable state of a subset of unobserved variables given some observed evidence
 - *Marginal Maximum a Posteriori* (MMAP): Finds the most probable state of a subset of variables, averaging out the uncertainty over the remaining ones
 
-Traditional methods: Junction Tree method, dynamic programming et al.
+#align(bottom+right, align(horizon)[Note: UAI 2024: #link("https://www.auai.org/uai2024/")])
 
-== Load a probabilistic graphical model
-#codebox([
+== Example: Asia network
+#align(top, grid(columns:2, gutter: 20pt, [1. Load model from file
+#codebox(width: 100%, [
 ```julia
-using TensorInference
+julia> using TensorInference # import package
 
-model = read_model_file(pkgdir(TensorInference, "examples", "asia-network", "model.uai"))
+julia> model = read_model_file(pkgdir(TensorInference, "examples", "asia-network", "model.uai"))
 UAIModel(nvars = 8, nfactors = 8)
  cards : [2, 2, 2, 2, 2, 2, 2, 2]
  factors : 
@@ -450,28 +454,25 @@ UAIModel(nvars = 8, nfactors = 8)
   Factor(6, 7), size = (2, 2)
   Factor(5, 6, 8), size = (2, 2, 2)
 ```
-], width: 100%)
-
-== Create a tensor network representation
-
-#codebox([
+])],
+[
+  2. Convert to a tensor network.
+#codebox(width: 100%, [
 ```julia
-# Create a tensor network representation of the loaded model.
-julia> inference_tn = TensorNetworkModel(model, evidence = Dict(7 => 0), optimizer=TreeSA())
+julia> inference_tn = TensorNetworkModel(model; optimizer=TreeSA(), evidence = Dict(7 => 0))
+
 TensorNetworkModel{Int64, OMEinsum.SlicedEinsum{Int64, OMEinsum.DynamicNestedEinsum{Int64}}, Array{Float64}}
 variables: 1, 2, 3, 4, 5, 6, 7 (evidence → 0), 8
 contraction time = 2^6.0, space = 2^2.0, read-write = 2^7.066
+``` 
+]
+)]))
 
-# Calculate the partition function
-julia> probability(inference_tn)
-exp(-2.2046416559839406) * fill(1.0)
-```
-], width: 100%)
-
-== Calculate the marginal probabilities
-#codebox([
+#align(top, grid(columns: 2, gutter: 20pt,
+[
+  3. Compute the marginal probabilities
+  #codebox(width: 100%, [
 ```julia
-# Calculate the marginal probabilities of each random variable in the model.
 julia> marginals(inference_tn)
 Dict{Vector{Int64}, Vector{Float64}} with 8 entries:
   [8] => [0.640766, 0.359234]
@@ -483,130 +484,102 @@ Dict{Vector{Int64}, Vector{Float64}} with 8 entries:
   [7] => [1.0]
   [2] => [0.0924109, 0.907589]
 ```
-], width: 100%)
-
-== Calculate the maximum a posteriori probability
-#codebox([
-```julia
-julia> logp, cfg = most_probable_config(inference_tn)
-(-3.65222179200233, [1, 1, 0, 0, 0, 0, 0, 0])
-```
-], width: 100%)
-
-== Sample from the model
-#codebox([
+])],
+[
+  4. Sampling and the most likely assignment
+  #codebox(width: 100%, [
 ```julia
 julia> sample(inference_tn, 10)
 10-element TensorInference.Samples{Int64}:
- [1, 1, 0, 1, 1, 1, 0, 1]
- [1, 1, 0, 0, 1, 0, 0, 0]
- [1, 1, 0, 0, 0, 0, 0, 0]
- [1, 1, 0, 0, 0, 0, 0, 0]
- ⋮
  [1, 1, 0, 0, 0, 0, 0, 1]
+ [1, 1, 0, 0, 0, 0, 0, 0]
+ [1, 0, 1, 1, 1, 0, 0, 0]
+ [1, 1, 0, 1, 0, 1, 0, 1]
+ [0, 1, 1, 1, 1, 1, 0, 1]
  [1, 1, 0, 0, 1, 0, 0, 0]
+ [1, 1, 0, 0, 0, 0, 0, 0]
+ [1, 1, 0, 0, 0, 0, 0, 0]
  [1, 1, 0, 0, 1, 0, 0, 1]
- [1, 1, 0, 1, 1, 1, 0, 1]
+ [1, 1, 0, 1, 0, 1, 0, 0]
+
+julia> most_probable_config(inference_tn)
+(-3.6522217920023303, [1, 1, 0, 0, 0, 0, 0, 0])
 ```
-])
+])]
+))
+
+== Pros and cons
+
+- Exact, without making any approximation.
+- General purposed, a single scheme work for most tasks.
+- Can obtain all marginal probabilities with a single sweep @Roa2024.
+#v(50pt)
+- Can not scale up easily. In some real world application, the number of tensors are above $10^4$ and the tree width is too large.
 
 
 = Application 3: Combinatorial optimization
 
-#canvas({
-  import draw: *
-  let desc(loc, title, description) = {
-    content(loc, [#text(blue, [*#title*:]) #description])
-  }
-  circle((0, 0), radius: (8, 4))
-  circle((4, 0), radius: (4, 2), fill:aqua)
-  desc((12, 4), "NP", [nondeterministic polynomial\ - decision problems that verifiable in polynomial time])
-  desc((-4, 0), "P", [polynomial time \ solvable])
-  desc((4, 0.8), "NP-complete", [\ hardest in NP])
-  circle((-4, 0), radius: (3, 3))
-  for (i, j, name) in ((0, 2, "A"), (0.6, 0, "B"), (-2, -1, "C"), (3, -1.5, "D"), (4, -0.5, "E")) {
-    circle((i, j), radius:0.2, fill: black, name:name)
-  }
-  for (a, b) in (("A", "B"), ("C", "B")) {
-    line(a, b, mark:(end:"straight"), stroke:(thickness:2pt, paint:black))
-  }
-  for (a, b) in (("D", "B"), ("E", "B"), ("D", "E")) {
-    line(a, b, mark:(end:"straight", start: "straight"), stroke:(thickness:2pt, paint:black))
-  }
-  line((11, 1), (13, 1), mark:(end:"straight"), stroke:(thickness:2pt, paint:black))
-  content((14, -1), block([A is _reducible_ to B: Map problem A to problem B, the solution of B can be mapped to a solution of A.], width:250pt))
-})
+== Constraint satisfaction problems (CSPs)
 
-== NP-complete problems
+#grid([
+#highlight([Constraint satisfaction problems (CSPs)]): a combinatorial problem with a set of *variables* and a set of *constraints*.
 
-=== Yes instances
+=== Examples: "physical" CSPs
 
 - Ground state of a spin-glass Hamiltonian.
-- Closest lattice vector problem.
-- Is a theorem provable in $k$ steps?
-- #text(red)[The maximum Independent Set problem (MIS).]
-
-=== No instances
-- Given a large integer $z$, find its prime factors. (not hard enough)
-- The number of 3-coloring of a graph. (not a decision problem)
-
-#place(top + right, figure(image("images/nature.jpg", width:17%), caption: text(14pt)[*"The nature of computation"*\ By: Cristopher Moore and Stephan Mertens], supplement: none), dy: -0pt)
-
-#place(top, dx:350pt, dy: 50pt, canvas({
-  import draw: *
-  line((0, 0), (2.25, 2), stroke:black, mark:(end:"o"))
-  show-grid-graph(4, 4, unitdisk: 1.1, gridsize: 1, radius: 0.2, a:(1, 0), b:(0.3, 0.9))
-  content((2.2, 2.3), [$?$])
-}))
-
-== Combinatorial optimization
-
-#grid([#image("images/configs.png", width: 80%)
-@Liu2023
+- #text(red)[The maximum Independent Set problem (MIS)] can be encoded in Rydberg atoms @Ebadi2022
+- ...
 ],
-[
-  #codebox([
+figure(image("images/nature.jpg", width:170pt), caption: text(16pt)[*"The nature of computation"*\ By: Cristopher Moore and Stephan Mertens], supplement: none), columns: 2)
+
+== Example: Independent set problem
+
+#align(top, grid([
+],
+[#codebox[
 ```julia
 julia> using GenericTensorNetworks, Graphs
 
-julia> graph = smallgraph(:petersen);
+julia> graph = smallgraph(:petersen)
+{10, 15} undirected simple Int64 graph
 
-julia> problem = IndependentSet(graph);
+julia> problem = IndependentSet(graph)
+IndependentSet{UnitWeight}(SimpleGraph{Int64}(15, [[2, 5, 6], [1, 3, 7], [2, 4, 8], [3, 5, 9], [1, 4, 10], [1, 8, 9], [2, 9, 10], [3, 6, 10], [4, 6, 7], [5, 7, 8]]), UnitWeight())
 
-julia> net = GenericTensorNetwork(problem; optimizer=TreeSA());
+julia> net = GenericTensorNetwork(problem; optimizer=TreeSA())
+GenericTensorNetwork{IndependentSet{UnitWeight}, OMEinsum.DynamicNestedEinsum{Int64}, Int64}
+- open vertices: Int64[]
+- fixed vertices: Dict{Int64, Int64}()
+- contraction time = 2^8.0, space = 2^4.0, read-write = 2^8.704
+```]], columns: 2, gutter: 20pt))
 
-julia> solve(net, CountingMax(2))  # count maximum two sizes
+Julia: a high performance scientific programming language for human.
+
+== Enumerate Configurations
+#grid(columns:2, gutter: 0pt,
+[#image("images/configs.png", width: 80%)],
+[#codebox([
+```julia
+julia> solve(net, CountingMax(2))
 0-dimensional Array{Max2Poly{Float64, Float64}, 0}:
 30.0*x^3 + 5.0*x^4
 
-julia> solve(net, ConfigsMax())  # enumerating MISs
+julia> solve(net, ConfigsMax(2))  # enumerating MISs
 0-dimensional Array{CountingTropical{Float64, ConfigEnumerator{10, 1, 1}}, 0}:
-(4.0, {1010000011, 1001001100, 0101010001, 0100100110, 0010111000})ₜ
+(4.0, {0100100110, 1001001100, 0010111000, 1010000011, 0101010001})ₜ
 ```
-])\
-#text(14pt)[Source code available on GitHub: #link("https://github.com/QuEraComputing/GenericTensorNetworks.jl")[GenericTensorNetworks.jl]]
-], columns: 2)
+], width: 100%)]
+)
 
-== Property extraction
-#align(center, canvas({
-  import draw: *
-  circle((6, -5.5), radius: (10, 4), stroke: none, fill: green.transparentize(80%))
-  content((6, -10), [contraction])
-  for (x, y, text) in ((-9, -2, "hard problem"), (-6, -4, "energy model"), (-3, -2, "partition function"), (0, -4, "tensor network"), (6, -4, "contraction order"), (12, -4, "algebra"), (6, -6, "contract"), (6, -8, "Properties")) {
-    content((x, y), box(text, stroke:black, inset:7pt), name: text)
-  }
-  for (a, b) in (("hard problem", "energy model"), ("energy model", "partition function"), ("partition function", "tensor network"), ("tensor network", "contract"), ("contraction order", "contract"), ("tensor network", "contraction order"), ("algebra", "contract"), ("contract", "Properties")) {
-    line(a, b, mark: (end: "straight"))
-  }
-  content((12.3, -1.5), [- Real
-  - Tropical
-  - Set
-  - ...])
-  content((6, -1.5), [- Bipartition
-  - Local search
-  - PMC
-  - ...])
-}))
+
+== Pros and cons
+
+- Exact
+- General purposed, the same framework works for many computational hard problems, such as independent set, dominating set, coloring, spin glass et al.
+- Can compute solution space properties, such as counting or enumeration of the solutions @Liu2023.
+#v(50pt)
+- Limited scalability, bounded by tree width.
+- In terms of finding single solution, usually performs worse than branching.
 
 
 // == The efficient sampling of low energy space
@@ -625,58 +598,17 @@ julia> solve(net, ConfigsMax())  # enumerating MISs
 //   content((2, -5), [3-regular graph])
 // }))
 
-== A unified framework for problem reductions
+== Continuing works
 
-#link("https://github.com/GiggleLiu/ProblemReductions.jl")[ProblemReductions.jl] (#box(image("images/ospp.jpeg"), height:30pt, baseline: 30%) Open source promotion plan)
+#table(inset: 10pt,
+  columns: (auto, auto, auto),
+  align: horizon,
+  table.header([*Package*], [*Developers (me excluded)*], [*Domain*]),
+  "ProblemReductions.jl", [#grid(columns: 2, image("images/xiaofeng.png", width:50pt), [Xiao-Feng Li (UG student from HKUST (GZ))], gutter: 10pt)], "Combinatorial optimization",
+  "TensorBranching.jl", [#grid(columns:2, gutter: 10pt, image("images/xuanzhao.png", width: 50pt), [Xuan-Zhao Gao (PhD student from HKUST (GZ))])], [Combinatorial optimization]
+  )
 
-#place(top + right, [#align(center, [#image("images/xiaofeng.png", width:50pt) Xiaofeng Li])])
-
-#align(center, canvas({
-  import draw: *
-  for (x, y, text) in (
-      (0, 0, "Independent set"),
-      (0, 2, "QUBO (or Spin glass)"),
-      (0, 6, "Dominating set"),
-      (0, 4, "Max cut"),
-      (-8, 1, "Vertex coloring"),
-      (-8, 3, "k-SAT"),
-      (-8, 5, "Circuit SAT"),
-      (-14, 0, "Matching"),
-      (8, 0, "Independent set on UDG"),
-      (8, 2, "QUBO on grid"),
-      (-14, 2, "Factoring"),
-      (-14, 6, "Vertex covering"),
-      (-8, -1, "Set packing"),
-      (-14, 4, "Set covering")
-    ){
-    content((x, y), box(text, stroke:black, inset:7pt), name: text)
-  }
-  let arr = "straight"
-  for (a, b, markstart, markend, color) in (
-    ("Set covering", "Vertex covering", none, arr, gray),
-    ("k-SAT", "Vertex coloring", none, arr, black),
-    ("QUBO (or Spin glass)", "Max cut", arr, arr, black),
-    ("k-SAT", "Independent set", none, arr, black),
-    ("Independent set on UDG", "Independent set", arr, arr, black),
-    ("Factoring", "Circuit SAT", none, arr, black),
-    ("QUBO (or Spin glass)", "Circuit SAT", arr, none, black),
-    ("Vertex covering", "Set covering", none, arr, black),
-    ("Dominating set", "k-SAT", arr, none, black),
-    ("Set packing", "Independent set", arr, arr, black),
-    ("k-SAT", "Independent set", none, arr, black),
-    ("Factoring", "Independent set on UDG", none, arr, black),
-    ("k-SAT", "Circuit SAT", arr, none, black),
-    ("Independent set on UDG", "QUBO on grid", arr, none, black),
-
-    ("QUBO (or Spin glass)", "QUBO on grid", arr, arr, gray),
-    ("Matching", "Circuit SAT", arr, none, gray),
-    ("Vertex covering", "Circuit SAT", arr, none, gray),
-  ){
-    line(a, b, mark: (end: markend, start: markstart), stroke: color)
-  }
-  rect((4, -1), (12, 3), stroke:(dash: "dashed"))
-  content((8, 3.5), [Two dimensional])
-}))
+#align(bottom+right, [Note: Package ProblemReductions.jl is sponsored by Open Source Promotion Plan (OSPP) 2024])
 
 == Thank you!
 

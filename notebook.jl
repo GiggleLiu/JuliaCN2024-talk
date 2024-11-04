@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.0
+# v0.20.1
 
 #> [frontmatter]
 
@@ -47,7 +47,7 @@ md"""
 
 # ╔═╡ ec23abba-eaf0-4e7a-bf7e-b50ffbe9532f
 md"""
-## Matrix multiplication in tensor network representation
+## Define an `EinCode`
 """
 
 # ╔═╡ 1f6d1be8-5157-4115-b5d6-e4ad6d474dd5
@@ -55,9 +55,6 @@ md"A contraction order, or an *einsum code*, is specified with a string literal 
 
 # ╔═╡ 0a83fd07-6dd3-4228-b435-c7f0c1ddbc12
 code = ein"ij,jk->ik"  # returns an EinCode object
-
-# ╔═╡ aa4b0f28-7553-4e3c-b35f-6c069aae7de9
-typeof(code)
 
 # ╔═╡ 1cf11208-acb2-4bbb-8342-140775c4a7c0
 md"`getixsv` and `getiyv` to obtain input/output indices:"
@@ -67,15 +64,6 @@ getixsv(code)
 
 # ╔═╡ 8f153a7f-3977-44ce-8c9c-7540f6c84e2c
 getiyv(code)
-
-# ╔═╡ 9a66d58a-7958-4cf9-ba68-688323b74feb
-md"einsum codes can be called liked a function:"
-
-# ╔═╡ 4e849834-1f00-4283-ad7c-f7a783d77ab4
-A, B = randn(3,3), randn(3, 3);
-
-# ╔═╡ 0ddf1061-d53c-4561-943b-f4460ee58962
-R = code(A, B)
 
 # ╔═╡ c4e8f71a-3118-4455-a9a5-b427e2d19ba0
 md"""
@@ -90,6 +78,15 @@ for i = 1:n_i
 end
 ```
 """
+
+# ╔═╡ 9a66d58a-7958-4cf9-ba68-688323b74feb
+md"einsum codes can be called liked a function:"
+
+# ╔═╡ 4e849834-1f00-4283-ad7c-f7a783d77ab4
+A, B = randn(3,3), randn(3, 3);
+
+# ╔═╡ 0ddf1061-d53c-4561-943b-f4460ee58962
+R = code(A, B)
 
 # ╔═╡ 6af3c70e-5a7e-4ab8-baf1-d666fea321cb
 md"""
@@ -151,6 +148,7 @@ for i = 1:n_i
         for k = 1:n_k
 			for b = 1:n_b
         		R[i, k, b] += A[i, j, b] * B[j, k, b]
+			end
 		end
 	end
 end
@@ -213,9 +211,6 @@ md"Given the contraction order and bond dimensions, ne can use `optimize_code` t
 
 # ╔═╡ f80aa1e7-1a92-4a52-a070-d382fa36dcb3
 optcode = optimize_code(code_inner_product, size_dict_inner, TreeSA())
-
-# ╔═╡ 1cbf610c-2a91-4b4b-baa3-baa15848ca7b
-md"TODO: Bug fix"
 
 # ╔═╡ 2656103c-fe7f-4a76-9f89-57aadc892824
 # ╠═╡ show_logs = false
@@ -442,12 +437,7 @@ end
 mat(control(2, 1, 2=>shift(Basic(:π)/2)))
 
 # ╔═╡ cb012a72-f5d8-41b7-9146-0cb184269801
-# reshape(ein"ij->ijij"([1 1; 1 exp(im * pi / 2)]), 4, 4)
 reshape(ein"ij->ijij"([1 1; 1 exp(im*Basic(:π)/2)]), 4, 4)
-# ein"ij->ijij"([1 1; 1 exp(im*π/2)])
-
-# ╔═╡ 8f7d7e0f-1fe1-4ac6-b0a3-4225368a8518
-md"TODO: Replaced `exp(im*Basic(:π)/2)` (which was not functioning) with `exp(im * pi / 2)`. Plz verify if this aligns with the intended expression."
 
 # ╔═╡ d2833db0-7f86-493b-b96e-8747f782f129
 md"## Convert a circuit to a tensor network"
@@ -599,6 +589,9 @@ md"`GenericTensorNetworks.jl` implements generic tensor networks to compute solu
 
 # ╔═╡ 889a4baf-842c-4429-b472-394eb35d8600
 graph = random_diagonal_coupled_graph(7, 6, 0.8) # Create a mxn random masked diagonal coupled square lattice graph, with number of vertices equal to ⌊m×n×ρ⌉
+
+# ╔═╡ 30419d46-e9d8-4c34-8c30-9c02edc91c36
+show_graph(graph, StressLayout())
 
 # ╔═╡ d2ef3090-4786-4391-8b8a-c7d9a7f1b511
 md"## Independent set problem"
@@ -814,7 +807,7 @@ md"""
 
 # ╔═╡ b96a17ae-c2b8-428b-a965-ecd09bd2fee1
 # Create a tensor network representation of the loaded model.
-inference_tn = TensorNetworkModel(model)
+inference_tn = TensorNetworkModel(model; optimizer=TreeSA())
 
 # ╔═╡ 00b47a54-cae5-4a41-9d1a-cad8e4264c3f
 # Retrieve all the variables in the model.
@@ -903,14 +896,13 @@ log_probability(mmap, [1, 0]), log_probability(mmap, [0, 0])
 # ╟─ec23abba-eaf0-4e7a-bf7e-b50ffbe9532f
 # ╟─1f6d1be8-5157-4115-b5d6-e4ad6d474dd5
 # ╠═0a83fd07-6dd3-4228-b435-c7f0c1ddbc12
-# ╠═aa4b0f28-7553-4e3c-b35f-6c069aae7de9
 # ╟─1cf11208-acb2-4bbb-8342-140775c4a7c0
 # ╠═e82c8140-c80e-4683-a72a-c8dec034c0a9
 # ╠═8f153a7f-3977-44ce-8c9c-7540f6c84e2c
+# ╟─c4e8f71a-3118-4455-a9a5-b427e2d19ba0
 # ╟─9a66d58a-7958-4cf9-ba68-688323b74feb
 # ╠═4e849834-1f00-4283-ad7c-f7a783d77ab4
 # ╠═0ddf1061-d53c-4561-943b-f4460ee58962
-# ╟─c4e8f71a-3118-4455-a9a5-b427e2d19ba0
 # ╟─6af3c70e-5a7e-4ab8-baf1-d666fea321cb
 # ╠═3b9821b6-851d-4509-aa7c-7ac7c8d57399
 # ╠═56cfb6d5-1866-4318-a578-7b30660b1f45
@@ -944,7 +936,6 @@ log_probability(mmap, [1, 0]), log_probability(mmap, [0, 0])
 # ╠═b176805b-ef1f-4cec-922a-f653ace76ce4
 # ╟─e564c83b-2b20-4c1a-87a4-1abc3c504c0c
 # ╠═f80aa1e7-1a92-4a52-a070-d382fa36dcb3
-# ╟─1cbf610c-2a91-4b4b-baa3-baa15848ca7b
 # ╠═2656103c-fe7f-4a76-9f89-57aadc892824
 # ╠═05171dfb-a005-448d-856a-4f1d417451b0
 # ╠═750ab594-9990-4ad1-a8c8-e66ea058909d
@@ -979,7 +970,6 @@ log_probability(mmap, [1, 0]), log_probability(mmap, [0, 0])
 # ╟─6173ea8a-a9e7-40e8-badb-601f8e96bd7d
 # ╠═f4e57c8d-57d3-4ee1-9cfe-06bfac8ac87f
 # ╠═cb012a72-f5d8-41b7-9146-0cb184269801
-# ╟─8f7d7e0f-1fe1-4ac6-b0a3-4225368a8518
 # ╟─d2833db0-7f86-493b-b96e-8747f782f129
 # ╟─29a41d88-7531-4914-866f-bc4185bde8c2
 # ╟─ae35e03a-0da9-496f-b942-ff312fb2b366
@@ -1006,6 +996,7 @@ log_probability(mmap, [1, 0]), log_probability(mmap, [0, 0])
 # ╟─53d3630c-c660-4c9a-9a1b-443613c17f6d
 # ╠═332085f3-ef12-4a7d-9714-e8f4a88d5a28
 # ╠═889a4baf-842c-4429-b472-394eb35d8600
+# ╠═30419d46-e9d8-4c34-8c30-9c02edc91c36
 # ╟─d2ef3090-4786-4391-8b8a-c7d9a7f1b511
 # ╟─c0022c3e-a56c-4363-8d6e-e70f0178a754
 # ╟─b9c74fbd-9836-46ac-b832-42731fcfc7ed
