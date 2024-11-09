@@ -429,12 +429,12 @@ julia> contract(qft_net) # calculate <reg|qft' observable qft|reg>
   for (a, b) in (("a", "c"), ("b", "d"), ("b", "e"), ("c", "f"), ("d", "f"), ("f", "g"), ("f", "h"), ("e", "h")) {
     line(a, b, mark: (end: "straight"))
   }
-  content((12, -3), box([*Tensors*\ p(A)\ p(S)\ p(T|A)\ p(L|S)\ p(B|S)\ p(E|T,L)\ p(X|B)\ p(D|E,X)], stroke: blue, inset: 10pt))
+  content((12, -3), box([*Tensors*\ p(A)\ p(S)\ p(T|A)\ p(L|S)\ p(B|S)\ p(E|T,L)\ p(X|E)\ p(D|E,B)], stroke: blue, inset: 10pt))
 })) 
 
 Marginal probability:
 
-$p(L) = sum_(A, S, T, B, E, X, D) p(A) p(S) p(T|A) p(L|S) p(B|S) p(E|T,L) p(X|B) p(D|E,X)$
+$p(L) = sum_(A, S, T, B, E, X, D) p(A) p(S) p(T|A) p(L|S) p(B|S) p(E|T,L) p(X|E) p(D|E,B)$
 
 == Exact inference in probabilistic graphical models
 
